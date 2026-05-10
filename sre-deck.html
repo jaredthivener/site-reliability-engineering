@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SRE Fundamentals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eef2fa;
+  --surface:#ffffff;
+  --ink:#080f1e;
+  --muted:#5a6880;
+  --line:rgba(8,15,30,0.09);
+  --blue:#1d4ed8;
+  --blue-dim:rgba(29,78,216,0.08);
+  --blue-border:rgba(29,78,216,0.20);
+  --sky:#0ea5e9;
+  --green:#059669;
+  --red:#dc2626;
+  --amber:#d97706;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --r:18px;
+  --r-sm:12px;
+  --sh:0 14px 44px rgba(8,15,30,0.08);
+  --sh-sm:0 4px 16px rgba(8,15,30,0.06);
+}
+html,body{height:100%;overflow:hidden;font-family:var(--sans);color:var(--ink)}
+body{
+  background:
+    radial-gradient(ellipse at 86% 4%,rgba(29,78,216,0.12),transparent 32%),
+    radial-gradient(ellipse at 7% 92%,rgba(14,165,233,0.10),transparent 28%),
+    var(--bg);
+}
+#app{display:grid;grid-template-columns:288px 1fr;height:100%}
+
+/* sidebar */
+#sidebar{
+  background:rgba(255,255,255,0.82);
+  backdrop-filter:blur(20px);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;gap:14px;
+  padding:20px 14px;overflow:hidden;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.bmark{
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,#1d4ed8,#0ea5e9);
+  box-shadow:0 8px 22px rgba(29,78,216,0.30);
+  display:grid;place-items:center;color:#fff;
+  font-family:var(--mono);font-weight:700;font-size:1rem;
+}
+.btxt{font-weight:800;font-size:.87rem;line-height:1.25}
+.bsub{font-size:.70rem;color:var(--muted);margin-top:1px}
+hr.div{border:none;border-top:1px solid var(--line)}
+#navlist{overflow-y:auto;flex:1;padding-right:2px}
+.ni{
+  cursor:pointer;padding:8px 10px;border-radius:9px;
+  border:1px solid transparent;
+  transition:background .13s,border-color .13s,transform .13s;
+  margin-bottom:3px;
+}
+.ni:hover{background:rgba(29,78,216,0.05);border-color:var(--blue-border);transform:translateX(2px)}
+.ni.on{background:var(--blue-dim);border-color:var(--blue-border)}
+.ns{font-family:var(--mono);font-size:.62rem;font-weight:700;color:var(--blue);letter-spacing:.10em;text-transform:uppercase}
+.nt{font-size:.78rem;font-weight:600;line-height:1.3;color:var(--ink);margin-top:2px}
+.ni.on .nt{font-weight:800}
+.kbhint{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+
+/* canvas */
+#canvas{display:flex;flex-direction:column;padding:20px 20px 16px;overflow:hidden}
+#topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;gap:12px;flex-shrink:0}
+.dlabel{font-family:var(--mono);font-size:.62rem;font-weight:700;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.dtitle{font-weight:800;font-size:1.02rem;margin-top:1px}
+.tright{display:flex;align-items:center;gap:10px}
+.schip{
+  font-family:var(--mono);font-size:.68rem;font-weight:700;
+  color:var(--blue);border:1px solid var(--blue-border);
+  background:var(--blue-dim);border-radius:999px;padding:4px 11px;
+}
+.scount{font-family:var(--mono);font-size:.78rem;color:var(--muted);font-weight:600}
+#prog{height:5px;border-radius:999px;background:rgba(29,78,216,0.12);margin-bottom:12px;flex-shrink:0;overflow:hidden}
+#progbar{height:100%;border-radius:999px;background:linear-gradient(90deg,#1d4ed8,#0ea5e9);transition:width .28s ease}
+#frame{flex:1;overflow-y:auto;padding-right:5px}
+#panel{
+  min-height:calc(100vh - 124px);
+  background:rgba(255,255,255,0.90);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--sh);
+  padding:34px 36px;
+  position:relative;overflow:hidden;
+}
+#panel::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(29,78,216,0.025),transparent 40%,rgba(14,165,233,0.025));
+}
+#fbar{display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-shrink:0}
+#fbar span{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+
+/* buttons */
+.btn{
+  border:none;cursor:pointer;border-radius:9px;font-family:var(--sans);
+  font-weight:700;font-size:.80rem;padding:7px 15px;transition:all .13s;
+}
+.btn-o{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn-o:hover:not(:disabled){border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.btn-s{background:var(--blue);color:#fff;border:1.5px solid var(--blue)}
+.btn-s:hover:not(:disabled){background:#1e40af}
+.btn:disabled{opacity:.35;cursor:default}
+.nbts{display:flex;gap:8px}
+
+/* slide content */
+.kicker{font-family:var(--mono);font-size:.63rem;font-weight:700;color:var(--blue);letter-spacing:.13em;text-transform:uppercase;margin-bottom:7px}
+.stitle{font-size:clamp(1.65rem,3vw,2.55rem);font-weight:800;letter-spacing:-.04em;line-height:1.12;margin-bottom:9px}
+.ssub{font-size:.95rem;color:var(--muted);line-height:1.68;max-width:860px}
+.sdiv{height:1px;background:linear-gradient(90deg,var(--line),transparent);margin:16px 0}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-sm);padding:16px 18px;height:100%}
+.ctitle{font-weight:800;font-size:.90rem;margin-bottom:8px}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.hgrid{display:grid;grid-template-columns:1.3fr 0.9fr;gap:18px;align-items:start}
+
+.blist{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.bitem{display:flex;gap:9px;align-items:flex-start;font-size:.89rem;line-height:1.55}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:.48em}
+
+.chip{display:inline-block;font-family:var(--mono);font-size:.70rem;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--blue-border);color:var(--blue);background:var(--blue-dim);margin-top:7px}
+.chip.r{border-color:rgba(220,38,38,.25);color:var(--red);background:rgba(220,38,38,.07)}
+.chip.a{border-color:rgba(217,119,6,.25);color:var(--amber);background:rgba(217,119,6,.07)}
+.chip.g{border-color:rgba(5,150,105,.25);color:var(--green);background:rgba(5,150,105,.07)}
+
+.bignum{font-family:var(--mono);font-size:1.75rem;font-weight:700;color:var(--blue);line-height:1.1;margin:6px 0 4px}
+.formula{background:var(--blue-dim);border:1px solid var(--blue-border);border-radius:9px;padding:11px 13px;margin-bottom:9px}
+.formula .fl{font-weight:800;font-size:.88rem}
+.formula .fv{font-size:.83rem;color:var(--muted);margin-top:2px}
+
+.fmla-hero{background:var(--blue-dim);border:2px solid var(--blue-border);border-radius:10px;padding:18px 24px;display:flex;flex-direction:column;gap:6px}
+.fmla-eq{font-family:var(--mono);font-size:1.15rem;font-weight:700;color:var(--blue);letter-spacing:.02em}
+.fmla-sub{font-size:.82rem;color:var(--muted);font-style:italic}
+.step-tbl{width:100%;border-collapse:collapse}
+.step-tbl tr td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.step-tbl tr:last-child td{border-bottom:none}
+.step-tbl td.slbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-right:16px;white-space:nowrap;width:1%;padding-top:9px}
+.step-tbl td.seq{font-family:var(--mono);font-size:.87rem;line-height:1.5}
+.step-tbl td.seq b{color:var(--blue)}
+.nines-tbl{width:100%;border-collapse:collapse;font-size:.83rem}
+.nines-tbl th{text-align:left;padding:7px 10px;border-bottom:2px solid var(--line);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.nines-tbl td{padding:7px 10px;border-bottom:1px solid var(--line);font-family:var(--mono)}
+.nines-tbl td:first-child{font-weight:700;color:var(--blue)}
+.nines-tbl tr:last-child td{border-bottom:none}
+.nines-tbl tr.nhl td{background:rgba(29,78,216,0.07)}
+
+.loop-flow{display:flex;align-items:stretch;gap:0}
+.loop-step{flex:1;background:var(--blue-dim);border:1px solid var(--blue-border);border-radius:9px;padding:14px 16px}
+.loop-num{font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--blue);opacity:.55;letter-spacing:.08em;margin-bottom:5px}
+.loop-label{font-weight:800;font-size:1rem;margin-bottom:5px}
+.loop-desc{font-size:.80rem;color:var(--muted);line-height:1.45}
+.loop-arr{align-self:center;color:var(--blue);font-size:1.4rem;flex-shrink:0;padding:0 8px;opacity:.4;font-weight:700}
+.analogy-row{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.br-tier{padding:13px 15px;border-radius:9px;margin-bottom:11px}
+.br-tier:last-child{margin-bottom:0}
+.br-tier.r{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.22)}
+.br-tier.a{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.22)}
+.br-head{display:flex;align-items:baseline;gap:11px;margin-bottom:4px}
+.br-mult{font-family:var(--mono);font-size:1.55rem;font-weight:700;line-height:1}
+.br-mult.r{color:var(--red)}
+.br-mult.a{color:var(--amber)}
+.br-name{font-weight:800;font-size:.90rem}
+.br-meta{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:5px;letter-spacing:.03em}
+.br-body{font-size:.83rem;line-height:1.52;color:var(--muted)}
+.br-body b{color:var(--ink);font-weight:700}
+.br-example{font-family:var(--mono);font-size:.74rem;color:var(--muted);margin-top:5px;padding:5px 8px;background:rgba(0,0,0,.03);border-radius:5px}
+.analogy-row:last-child{border-bottom:none}
+.analogy-concept{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);width:90px;flex-shrink:0}
+.analogy-val{font-size:.85rem;line-height:1.45}
+.analogy-val b{color:var(--blue)}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.86rem}
+.tbl th{background:rgba(29,78,216,0.06);padding:9px 13px;text-align:left;font-weight:800;border-bottom:1px solid var(--line)}
+.tbl td{padding:8px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover{background:rgba(29,78,216,0.025)}
+.tbl td:first-child{font-weight:700}
+.twrap{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+
+.callout{background:var(--blue-dim);border-left:3px solid var(--blue);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:13px 16px;font-weight:700;font-size:.90rem;line-height:1.55}
+.note{background:rgba(5,150,105,.06);border-left:3px solid var(--green);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:11px 16px;font-size:.86rem;line-height:1.55;color:#065f46}
+
+.reflink{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  text-decoration:none;color:inherit;
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:13px 16px;margin-bottom:7px;
+  box-shadow:var(--sh-sm);transition:box-shadow .14s,border-color .14s;
+}
+.reflink:hover{box-shadow:0 14px 38px rgba(29,78,216,0.12);border-color:var(--blue-border)}
+.rtitle{font-weight:800;font-size:.88rem}
+.rurl{font-family:var(--mono);font-size:.69rem;color:var(--muted);margin-top:2px}
+
+.tprop{display:flex;gap:9px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-sm)}
+.rdot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:.45em}
+.tlabel{font-weight:800;font-size:.86rem;margin-bottom:3px}
+.tdesc{font-size:.82rem;color:var(--muted);line-height:1.5}
+
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.sigicon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:1rem;margin-bottom:9px}
+.sname{font-weight:800;font-size:.92rem;margin-bottom:5px}
+.sdesc{font-size:.84rem;color:var(--muted);line-height:1.52;margin-bottom:9px}
+
+/* dark mode */
+body.dark{
+  --bg:#0d1117;
+  --surface:#161b27;
+  --ink:#e2e8f5;
+  --muted:#7a8aaa;
+  --line:rgba(226,232,245,0.08);
+  --blue:#4f84f8;
+  --blue-dim:rgba(79,132,248,0.12);
+  --blue-border:rgba(79,132,248,0.28);
+  --green:#34d399;
+  --red:#f87171;
+  --amber:#fbbf24;
+  --sh:0 14px 44px rgba(0,0,0,0.35);
+  --sh-sm:0 4px 16px rgba(0,0,0,0.25);
+}
+body.dark{
+  background:
+    radial-gradient(ellipse at 86% 4%,rgba(79,132,248,0.10),transparent 32%),
+    radial-gradient(ellipse at 7% 92%,rgba(14,165,233,0.07),transparent 28%),
+    var(--bg);
+}
+body.dark #sidebar{background:rgba(18,23,36,0.88)}
+body.dark #panel{background:rgba(22,27,39,0.96)}
+body.dark .card{background:var(--surface)}
+body.dark .tprop{background:var(--surface)}
+body.dark .reflink{background:var(--surface)}
+body.dark .note{background:rgba(52,211,153,0.07);color:#6ee7b7}
+body.dark .tbl th{background:rgba(79,132,248,0.10)}
+body.dark .btn-o{border-color:var(--line);color:var(--ink)}
+body.dark .btn-o:hover:not(:disabled){border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+
+/* transition everything smoothly */
+body,#sidebar,#panel,.card,.tprop,.reflink,.note,.tbl th,.btn-o,
+#app,.callout,.formula,.chip{transition:background .22s,color .22s,border-color .22s,box-shadow .22s}
+
+/* toggle switch */
+.dm-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.dm-label{font-family:var(--mono);font-size:.66rem;font-weight:700;color:var(--muted);transition:color .22s}
+.toggle-track{
+  width:38px;height:22px;border-radius:999px;
+  background:rgba(29,78,216,0.15);border:1.5px solid var(--blue-border);
+  position:relative;transition:background .22s,border-color .22s;cursor:pointer;
+}
+body.dark .toggle-track{background:rgba(79,132,248,0.25)}
+.toggle-thumb{
+  position:absolute;top:2px;left:2px;
+  width:16px;height:16px;border-radius:50%;
+  background:#1d4ed8;
+  transition:transform .22s cubic-bezier(.4,0,.2,1),background .22s;
+  display:grid;place-items:center;font-size:.6rem;
+}
+body.dark .toggle-thumb{transform:translateX(16px);background:#4f84f8}
+
+@media(max-width:1080px){
+  #app{grid-template-columns:1fr}
+  #sidebar{display:none}
+  body,html{overflow:auto;height:auto}
+  #canvas{padding:12px}
+  #frame{overflow:visible;flex:none}
+  #panel{min-height:auto;padding:20px}
+  .hgrid,.g2,.g3,.g4{grid-template-columns:1fr}
+}
+
+/* sidebar collapse */
+#app.collapsed{grid-template-columns:0 1fr}
+#app.collapsed #sidebar{width:0;padding:0;overflow:hidden;border:none}
+.collapse-btn{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted);
+  transition:color .13s;
+}
+.collapse-btn:hover{color:var(--blue)}
+#sidebar-toggle{
+  border:none;cursor:pointer;background:transparent;
+  width:28px;height:28px;border-radius:7px;display:grid;place-items:center;
+  font-size:.85rem;color:var(--muted);transition:background .13s,color .13s;
+  flex-shrink:0;
+}
+#sidebar-toggle:hover{background:var(--blue-dim);color:var(--blue)}
+
+/* fullscreen button */
+.btn-icon{
+  border:none;cursor:pointer;border-radius:9px;font-family:var(--sans);
+  font-weight:700;font-size:.80rem;padding:7px 10px;transition:all .13s;
+  background:transparent;border:1.5px solid var(--line);color:var(--muted);
+}
+.btn-icon:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+
+/* slide fade transition */
+#panel{transition:opacity .15s ease,background .22s,color .22s,border-color .22s,box-shadow .22s}
+#panel.fade-out{opacity:0}
+
+/* toil amber dot */
+.rdot{background:var(--amber)!important}
+
+@media print{
+  *{overflow:visible!important}
+  #sidebar,#topbar,#prog,#fbar{display:none!important}
+  #app{display:block}
+  #canvas{padding:0}
+  #frame{overflow:visible}
+  #panel{box-shadow:none;border:none;border-radius:0;min-height:0;padding:24px 28px;page-break-after:always}
+  .hgrid,.g2,.g3,.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="bmark">S</div>
+      <div><div class="btxt">SRE Fundamentals</div><div class="bsub">Principal Engineer Edition</div></div>
+    </div>
+    <hr class="div"/>
+    <div id="navlist"></div>
+    <hr class="div"/>
+  </aside>
+  <main id="canvas">
+    <div id="topbar">
+      <div><div class="dlabel">Principal Engineer · Internal Training Deck</div><div class="dtitle">SRE Reliability Model</div></div>
+      <div class="tright">
+        <span class="schip" id="schip"></span>
+        <span class="scount" id="scount"></span>
+        <button class="btn-icon" id="fsbtn" title="Fullscreen (F)">⛶</button>
+        <button class="btn-icon" id="sidebartoggle" title="Toggle sidebar">☰</button>
+        <div class="dm-toggle" id="dmtoggle" title="Toggle dark mode">
+          <span class="dm-label" id="dmlabel">LIGHT</span>
+          <div class="toggle-track"><div class="toggle-thumb" id="dmthumb">☀️</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="prog"><div id="progbar"></div></div>
+    <div id="frame"><div id="panel"></div></div>
+    <div id="fbar">
+      <div class="nbts">
+        <button class="btn btn-o" id="bprev">← Prev</button>
+        <button class="btn btn-s" id="bnext">Next →</button>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+var SLIDES=[
+{section:'Foundations',type:'hero',
+ title:'SRE for SaaS: defining reliability as a product promise',
+ subtitle:'How SLIs, SLOs, and error budgets turn operational risk into engineering decisions.',
+ left:{title:'What this deck covers',bullets:['SRE model — reliability as an engineering discipline','The Four Golden Signals','Critical User Journeys (CUJs): the right measurement boundary','Designing SLIs that reflect user experience','Setting SLO targets and time windows','How error budgets shape release policy','Burn-rate alerting: catching risk before breach','Postmortem culture and toil reduction','Applying this model on AWS EKS SaaS']},
+ right:{title:'Core thesis',items:[{a:'Measure',b:'What users feel'},{a:'Objective',b:'What acceptable looks like'},{a:'Budget',b:'How much risk remains'},{a:'Policy',b:'What changes when budget runs out'}]},
+ tags:['SLIs','SLOs','Error budgets','Burn rates','CUJs','Postmortems','Toil','EKS SaaS'],heroBullets:true},
+
+{section:'SRE Model',type:'columns',
+ title:'What SRE is really optimising for',
+ subtitle:'Engineering reliability as a system, not as a feeling. Risk is the shared currency between product and engineering.',
+ cols:[
+   {title:'Product outcomes',items:['Availability','Latency','Correctness','Freshness','Durability']},
+   {title:'Engineering mechanisms',items:['Instrumentation','Automation','Alerting','Chaos / resilience testing','Capacity planning']},
+   {title:'Decision levers',items:['Release gates','Error-budget policy','Incident response','Blameless postmortems','Toil reduction']}
+ ],
+ callout:'The SRE model: reliability is a shared feature that product and engineering co-own. The error budget is the mechanism that keeps both sides honest.'},
+
+{section:'Terminology',type:'cards',
+ title:'The vocabulary that keeps teams aligned',
+ subtitle:'Use these terms precisely — imprecision is the root of most measurement failures.',
+ cards:[
+   {name:'SLI',desc:'A quantitative measure of a service level. The ratio of good events to total events over a rolling window.',chip:'good_requests / total_requests',cs:''},
+   {name:'SLO',desc:'A target value for an SLI. The reliability promise made to stakeholders.',chip:'99.9% success over 30 days',cs:''},
+   {name:'SLA',desc:'An external, contractual promise with explicit business consequences for breach.',chip:'Credits, refunds, penalties',cs:'a'},
+   {name:'Error budget',desc:'The inverse of the SLO — the allowed quantity of unreliability before policy enforcement kicks in.',chip:'1 − SLO = 0.1% allowed failures',cs:'r'},
+   {name:'Burn rate',desc:'Rate of budget consumption relative to the allowed rate. Burn rate &gt; 1 means the SLO will be missed.',chip:'actual_err_rate / (1 − SLO)',cs:'r'},
+   {name:'Toil',desc:'Manual, repetitive, automatable, tactical work that scales linearly with load. The SRE enemy.',chip:'Manual restarts, manual deploys',cs:'a'}
+ ]},
+
+{section:'Four Golden Signals',type:'golden',
+ title:"Start here: Google's Four Golden Signals",
+ subtitle:'From the SRE book: if you can only measure four things, measure these. Every SLI worth building maps to at least one.',
+ signals:[
+   {icon:'⏱',color:'#1d4ed8',bg:'rgba(29,78,216,0.09)',name:'Latency',desc:'Time to serve a request. Distinguish successful latency from error latency — slow errors mask real performance.',metric:'p50 / p95 / p99 request duration'},
+   {icon:'📡',color:'#0ea5e9',bg:'rgba(14,165,233,0.09)',name:'Traffic',desc:'Demand on the system. For APIs: RPS. For storage: IOPS. For streaming: messages/sec.',metric:'requests per second (RPS)'},
+   {icon:'🔴',color:'#dc2626',bg:'rgba(220,38,38,0.08)',name:'Errors',desc:'Rate of failed requests — explicit (5xx), implicit (200 + wrong body), or policy violations.',metric:'error_count / total_requests'},
+   {icon:'📊',color:'#d97706',bg:'rgba(217,119,6,0.09)',name:'Saturation',desc:'How "full" the service is. A leading indicator — latency and errors degrade before saturation hits 100%.',metric:'CPU%, memory%, queue depth'}
+ ],
+ callout:'Latency and Errors are the most universal starting points for request-driven SaaS. Every SLI should map back to at least one signal.'},
+
+{section:'Critical User Journeys',type:'twopane',
+ title:'Define SLIs around Critical User Journeys',
+ subtitle:'A CUJ is the sequence of actions a user takes to accomplish a goal. SLIs should cover the whole journey, not just a single endpoint.',
+ left:{title:'How to identify CUJs',bullets:['Map what users actually do — not what the system exposes','Identify where user pain translates to business impact','Start with login/auth, primary write, and core read paths','Validate with support tickets and NPS/CSAT data','Pick 3–5 CUJs that cover ~80% of user value']},
+ right:{title:'Example CUJs for a SaaS platform',bullets:['Sign in → reach the dashboard (auth CUJ)','Create and submit a report (write CUJ)','Load and view a dashboard (read CUJ)','Receive and process a webhook (async CUJ)','Export data to CSV / PDF (egress CUJ)']},
+ note:'Each CUJ gets its own SLI and SLO. This forces full journey instrumentation, not just outermost load-balancer metrics. In multi-tenant SaaS, measure CUJs per cohort (tier, region, or tenant) — aggregate SLIs can mask one tenant\'s severe degradation inside a healthy average.'},
+
+{section:'SLI Design',type:'twopane',
+ title:'How to design the right SLI',
+ subtitle:'Choose indicators that are precise, automatable, and tied to customer impact.',
+ left:{title:'Good SLIs are…',bullets:['User-centric: maps to something a user feels','Countable: a ratio of good events to total events','Windowed: evaluated over a defined rolling period','Hard to game and easy to explain in a postmortem','Derived from real request, job, or CUJ data']},
+ right:{title:'Avoid these as primary SLIs',bullets:['CPU or memory utilisation in isolation','Node or pod count','Pod restart rate (a symptom, not the pain)','Deployment frequency (a velocity metric)','Synthetic probes that don\'t reflect real traffic']},
+ footer:'Infrastructure metrics remain valuable for diagnosis and capacity planning — they should not define the user-facing reliability promise.'},
+
+{section:'SLO as Contract',type:'loop',
+ title:'The target comes first. The measurement proves whether you\'re meeting it.',
+ subtitle:'A ratio on a dashboard is meaningless without a prior commitment. SLOs are contracts, not observations.',
+ flow:[
+   {num:'01',label:'Decide',desc:'Agree on the failure threshold where users actually notice pain — before any data exists'},
+   {num:'02',label:'Measure',desc:'Instrument good ÷ total continuously. This is the SLI — a live ratio against your committed target'},
+   {num:'03',label:'Compare',desc:'Is the live SLI above or below the committed percentage? The gap is what matters'},
+   {num:'04',label:'Act',desc:'If consuming budget faster than allowed, engineering behavior changes — now, not at month-end'}
+ ],
+ analogy:[
+   {concept:'Speed limit',   val:'<b>The SLO</b> — a deliberate prior commitment (e.g. 99.9%)'},
+   {concept:'Speedometer',   val:'<b>The SLI</b> — the live ratio of good ÷ total requests'},
+   {concept:'Distance left', val:'<b>The error budget</b> — how far you can go before enforcement kicks in'},
+   {concept:'No limit posted', val:'"67 mph" means nothing. Without a target, the ratio is just a number'}
+ ],
+ right:{title:'What this changes operationally',bullets:[
+   'Without SLO: "The service feels slow — should we delay the release?" — subjective, political, unresolvable',
+   'With SLO: "We have 18% of error budget remaining — yes, we delay" — objective, pre-agreed, no debate',
+   'The SLO does not need to be published to customers — that is an SLA',
+   'It must be decided internally before measurement has meaning',
+   'Many teams run internal SLOs for 1–2 quarters before formalizing an SLA'
+ ]},
+ callout:'SLOs defined as raw counts ("fewer than 500 errors per day") break under traffic growth — they are not load-invariant. Only a ratio anchored to a committed target scales with your service. This is why the percentage form is not a stylistic choice.',
+ note:'The next slide shows how to choose those committed targets — not how to read a dashboard after the fact.'},
+
+{section:'SLO Design',type:'table',
+ title:'Setting SLO targets without hand-waving',
+ subtitle:'Use customer expectation, business impact, and operational maturity to shape the number.',
+ thead:['CUJ / Capability','SLI','Window','SLO'],
+ rows:[
+   ['Public API (non-critical)','Successful requests / total','30 days','99.9%'],
+   ['Login / auth','Successful logins / total','30 days','99.95%'],
+   ['Core write CUJ','Completed writes / total','30 days','99.9%'],
+   ['Async job completion','Completed within SLA / total','30 days','99.5%'],
+   ['Latency (p95)','Requests served &lt; 400ms / total','30 days','95%'],
+   ['Data freshness','Reads within 5 min of write','7 days','99.5%']
+ ],
+ note:'The best SLO is strict enough to reflect real customer pain and realistic enough to govern against. Aspirational nines that are never enforced destroy trust.'},
+
+{section:'SLO Math',type:'slomath',
+ title:'From percentage to budget: the arithmetic behind SLOs',
+ subtitle:'Every SLO percentage is a ratio. Understanding the arithmetic prevents the most common target-setting mistakes.',
+ formula:'SLI  =  good_events  ÷  valid_events  ×  100',
+ formulaNote:'Always a ratio — latency SLIs count "requests completing under threshold" as the good_event, not raw duration',
+ steps:[
+   {label:'SLO target',   eq:'99.9%  &rarr;  <b>0.999</b>  (as a decimal)'},
+   {label:'Error budget', eq:'1 &minus; 0.999  =  <b>0.001</b>  &rarr;  0.1% of requests may fail'},
+   {label:'Volume',       eq:'1 M req/day &times; 30 days  =  <b>30,000,000</b> total requests'},
+   {label:'Allowed bad',  eq:'30,000,000 &times; 0.001  =  <b>30,000</b> failures permitted'},
+   {label:'Breach check', eq:'35,000 failures &gt; 30,000  &rarr;  <b>SLO missed</b> by 5,000 requests'},
+   {label:'Burn rate',    eq:'actual_err_rate &divide; (1 &minus; SLO)  &rarr;  <b>14&times;</b> exhausts budget in ~52 h'}
+ ],
+ nines:[
+   {slo:'99%',    downtime:'7.2 h / month',   bad:'300,000'},
+   {slo:'99.5%',  downtime:'3.6 h / month',   bad:'150,000'},
+   {slo:'99.9%',  downtime:'43.8 min / month', bad:'30,000',  hl:true},
+   {slo:'99.95%', downtime:'21.9 min / month', bad:'15,000'},
+   {slo:'99.99%', downtime:'4.3 min / month',  bad:'3,000'}
+ ],
+ callout:'Choose your SLO based on the threshold where users actually notice pain — not on the prestige of the number. A 99.99% SLO with no enforcement mechanism is worse than a 99.9% SLO that drives real engineering decisions.',
+ note:'Reference: Google SRE Workbook, Chapter 2 — Implementing SLOs. The worked arithmetic above is the same model Google uses internally.'},
+
+{section:'Error Budgets',type:'metrics',
+ title:'Error budgets convert reliability into a policy control',
+ subtitle:'The budget is the rate at which the SLO may be missed before the team changes behaviour.',
+ items:[
+   {top:'99.9% SLO',big:'~43.8 min/month',desc:'Typical baseline for most SaaS APIs — generous enough to ship continuously'},
+   {top:'99.95% SLO',big:'~21.9 min/month',desc:'Critical auth or write paths — roughly 22 minutes of allowed downtime per month'},
+   {top:'99.99% SLO',big:'~4.4 min/month',desc:'Reserved for highly sensitive surfaces; nearly always requires multi-region active-active'}
+ ],
+ footer:"Google SRE: insisting on 100% availability is almost always the wrong target. A zero error budget freezes innovation and fails to distinguish impactful failures from unnoticed ones."},
+
+{section:'Governance',type:'threepane',
+ title:'How the error budget drives decisions',
+ subtitle:'A healthy SRE program makes release decisions objective, not political.',
+ cols:[
+   {title:'🟢  Budget healthy (>50%)',items:['Ship at normal velocity','Continue experiments and feature flags','Run chaos / resilience exercises','Invest in new observability improvements']},
+   {title:'🟡  Budget degraded (10–50%)',items:['Increase deploy scrutiny — require SRE review','Freeze highest-risk changes','Accelerate toil automation backlog','Review recent incidents for systemic patterns']},
+   {title:'🔴  Budget exhausted (<10%)',items:['Pause risky releases until budget recovers','Shift engineering capacity to reliability work','Trigger deeper incident and postmortem review','Reduce change rate; focus on toil reduction']}
+ ],
+ callout:'The budget is not a report card. It is an allocation mechanism that lets product and SRE negotiate velocity vs. reliability without escalating every time.'},
+
+{section:'Alerting',type:'burnrate',
+ title:'Burn-rate alerting: see risk before the SLO is breached',
+ subtitle:'Alert on budget consumption rate, not raw error counts. The multiplier tells you how many times faster than sustainable you are burning.',
+ formula:'burn_rate  =  error_rate  &divide;  (1 &minus; SLO_target)',
+ formulaNote:'Dimensionless ratio. At 1&times; you exhaust the budget exactly at the window deadline &mdash; a guaranteed miss. At 14&times; you exhaust it in 1/14 of the window (&asymp;52 h on a 30-day budget). Same threshold works at any traffic volume because it is always relative to your SLO budget.',
+ tiers:[
+   {mult:'14&times;',name:'Page: Fast burn',windows:'1 h  AND  6 h',cs:'r',
+    impact:'Budget gone in 30 &divide; 14 &asymp; 52 h. Requires immediate human response.',
+    example:'Example &rarr; 1.4% errors on 99.9% SLO: &nbsp; 1.4 &divide; 0.1 = 14&times;'},
+   {mult:'1&times;',name:'Ticket: Slow burn',windows:'6 h  AND  3 days',cs:'a',
+    impact:'Budget exhausts exactly at the deadline &mdash; a silent, guaranteed SLO miss. No fast-burn alert ever fires. Actionable next business day.',
+    example:'Example &rarr; 0.1% errors on 99.9% SLO: &nbsp; 0.1 &divide; 0.1 = 1&times;'}
+ ],
+ table:[
+   {rate:'14&times;',example:'1.4% errors',exhausted:'~52 h',hl:true},
+   {rate:'6&times;', example:'0.6% errors',exhausted:'~5 days'},
+   {rate:'3&times;', example:'0.3% errors',exhausted:'~10 days'},
+   {rate:'2&times;', example:'0.2% errors',exhausted:'~15 days'},
+   {rate:'1&times;', example:'0.1% errors',exhausted:'30 days (miss)',hl:true}
+ ],
+ twoWindow:'Short window (1h or 6h) detects the event quickly. Long window (6h or 3d) confirms it is sustained, not a 90-second spike. <b>Both windows must exceed the threshold simultaneously</b> before any alert fires &mdash; this AND logic eliminates the majority of spurious pages.',
+ callout:'Why not alert on raw error counts? 500 errors/hour at 500k req/h = 0.1% (fine). At 5k req/h = 10% (catastrophic). Burn rate is load-invariant: the same threshold works at any traffic volume, any time of day.'},
+
+
+{section:'Postmortem Culture',type:'twopane',
+ title:'Blameless postmortems close the learning loop',
+ subtitle:'Every SLO breach is an opportunity to update the system. Postmortems that assign blame fix nothing — they only hide future problems.',
+ left:{title:'A good postmortem contains',bullets:['Precise impact statement: who, what, for how long','Detailed timeline from first signal to resolution','Root cause analysis (5-whys or fishbone)','Contributing factors beyond the immediate cause','Action items with owners and due dates']},
+ right:{title:'Common anti-patterns',bullets:['Naming individuals rather than system failures','"Human error" as a root cause (it never is)','Action items with no owners or due dates','Writing the doc and never reviewing actions','Treating near-misses as non-events']},
+ note:'At Google, postmortems are shared publicly across SRE teams. The willingness to share failure is the biggest cultural predictor of reliability improvement.'},
+
+{section:'Toil',type:'toil',
+ title:'Toil is the SRE enemy — name it, measure it, eliminate it',
+ subtitle:'From the SRE book: toil is work tied to running a production service that is manual, repetitive, automatable, tactical, and scales with service growth.',
+ props:[
+   {label:'Manual',desc:'Requires a human to execute rather than code to run automatically.'},
+   {label:'Repetitive',desc:'Performed again and again with identical or near-identical steps.'},
+   {label:'Automatable',desc:'A machine could do it — if someone invests time to build that machine.'},
+   {label:'Tactical',desc:'Reactive interrupt work that prevents strategic engineering from happening.'},
+   {label:'O(n) with scale',desc:'Grows linearly as traffic, tenants, or services grow — not absorbed by architecture.'},
+   {label:'No enduring value',desc:'Leaves the system in the same state as before; adds no lasting improvement.'}
+ ],
+ callout:'The 50% rule: SREs should spend at most 50% of their time on toil. Consistently exceeding this is a signal to escalate and reallocate or automate.'},
+
+{section:'EKS SaaS',type:'twopane',
+ title:'Applying SRE to AWS EKS-hosted SaaS',
+ subtitle:'Separate customer-facing SLOs from platform health signals. Platform metrics are supporting context, not user promises.',
+ left:{title:'Customer SLIs (own these)',bullets:['API request success rate per tenant','Tenant workflow completion rate','Authentication success rate','p99 API latency per CUJ','Async job completion within SLA window','Data freshness for read-heavy surfaces']},
+ right:{title:'Platform SLIs (support customer SLIs)',bullets:['Ingress / ALB routing success','Pod readiness across critical Deployments','Node availability per AZ','CoreDNS resolution latency','HPA responsiveness under burst load','EBS / EFS volume mount success rate']},
+ note:'Platform SLIs are leading indicators for customer SLIs. Correlate them in dashboards, but publish customer SLOs to stakeholders — not node counts.'},
+
+{section:'Observability',type:'columns',
+ title:'Your observability stack must serve SLOs',
+ subtitle:'Metrics, logs, and traces are inputs to reliability decisions — not the objective itself.',
+ cols:[
+   {title:'Metrics',items:['Prometheus + recording rules for SLI ratios','Grafana SLO dashboards','CloudWatch Container Insights','Custom burn-rate alert rules']},
+   {title:'Logs',items:['Structured JSON logs with correlation IDs','Request-level success/failure tagging','Fluent Bit → OpenSearch / S3','Per-tenant log aggregation']},
+   {title:'Traces',items:['OpenTelemetry SDK instrumentation','AWS X-Ray or Jaeger on EKS','Latency attribution across service graph','Trace-based SLI validation']}
+ ],
+ callout:'The key question your observability stack must answer: what is failing, who is affected, how fast is the budget burning, and which service owns the problem?'},
+
+{section:'Anti-patterns',type:'twopane',
+ title:'What a Principal Engineer would push back on',
+ subtitle:'The most common failure mode is metrics without governance. Dashboards without decisions are decoration.',
+ left:{title:'❌  Avoid',bullets:['Too many SLOs — alert fatigue and ignored dashboards','Ambiguous measurement boundaries (where does the SLI start?)','Infrastructure-only objectives that miss user impact','100% SLO targets that eliminate the error budget mechanism','Postmortems that blame individuals rather than systems','SREs spending > 50% of time on toil']},
+ right:{title:'✅  Prefer',bullets:['A small set of CUJ-driven SLOs that decision-makers trust','Clear event counting with a documented good/bad definition','A written error-budget policy signed off by product and engineering','Burn-rate alerts wired to on-call runbooks','Regular monthly SLO review meetings','Toil tracked as a metric alongside SLI data']},
+ callout:'If a metric cannot drive a concrete engineering or product decision, it is probably not an SLO — it is a dashboard.'},
+
+{section:'Incident Mgmt',type:'table',
+ title:'Incident severity levels and response model',
+ subtitle:'Shared severity definitions remove ambiguity during an incident and drive consistent escalation, communication, and post-incident action.',
+ thead:['Severity','Definition','Response SLA','Communication cadence'],
+ rows:[
+   ['SEV1','Complete outage or data loss affecting all/most tenants','Page immediately — commander assigned within 5 min','External status page update every 15 min'],
+   ['SEV2','Significant degradation — major CUJ failing for a subset of tenants','Page on-call — acknowledge within 15 min','Internal update every 30 min'],
+   ['SEV3','Minor degradation — CUJ impaired but workaround exists','Ticket — respond within 2 hours','Tracked in incident channel; no external update'],
+   ['SEV4','Cosmetic / low-impact issue with no user-visible SLO effect','Ticket — next business day','Linked to relevant Jira/Linear ticket']
+ ],
+ note:'Every SEV1/SEV2 requires an incident commander (IC). The IC owns communication and coordinates response — they do not fix the problem. Separate these roles explicitly in your runbook.'},
+
+{section:'On-Call Health',type:'twopane',
+ title:'Sustainable on-call is an SRE output metric',
+ subtitle:'Alert fatigue and burnout are the #1 predictor of SRE attrition. Measure on-call health as rigorously as SLOs.',
+ left:{title:'Healthy on-call signals',bullets:['≤ 2 actionable pages per shift on average','P50 time-to-resolve trending flat or down','Escalation rate < 10% of pages','Post-incident actions closed within agreed SLA','Rotation covers ≥ 4 engineers (no single-person coverage)']},
+ right:{title:'Unhealthy on-call signals',bullets:['Noisy alerts that resolve without action (>20% of pages)','Same alert firing repeatedly without a fix or silence','Single engineer absorbing > 30% of incidents','Postmortem actions aging > 60 days with no progress','Engineers opting out of rotation due to burnout']},
+ callout:'Track monthly: total pages, actionable rate, MTTR, and engineer-reported on-call burden score. If actionable page rate falls below 50%, the alerting policy needs work before the SLO does.'},
+
+{section:'SLO Review',type:'twopane',
+ title:'The monthly SLO review: what you actually do',
+ subtitle:'An SLO review is a decision meeting, not a dashboard walkthrough. Every agenda item should end with an action or a deliberate non-action.',
+ left:{title:'Agenda (60 min)',bullets:['Review remaining error budget per SLO (10 min)','Walk SLO breach or near-miss events (15 min)','Review open postmortem actions — are they on track? (10 min)','Assess toil metric — is it trending down? (10 min)','Budget policy decision: ship / slow / stop (5 min)','SLO target review: tighten, loosen, or retire? (10 min)']},
+ right:{title:'When to change an SLO target',bullets:['Tighten: customers are reporting pain inside the current target','Tighten: the team has consistently held 2× the target for 6+ months','Loosen: the target is never breached and the budget is never used','Loosen: the team is over-investing in reliability for this surface','Retire: the CUJ no longer exists or has been replaced','Add new: a new CUJ has launched and has no coverage']},
+ note:'An SLO that has never been breached and has never triggered a policy action is either too loose or not being enforced. Both are problems.'},
+
+{section:'Runbooks',type:'twopane',
+ title:'What a good runbook looks like',
+ subtitle:'A runbook is a playbook for a specific alert or failure mode. It must be actionable by a half-awake engineer at 3 AM.',
+ left:{title:'Required sections',bullets:['Alert name and what it measures','Why it fires: threshold and burn-rate context','Likely causes (ordered by historical frequency)','Step-by-step triage: commands and expected output','Escalation: who to call and when','Rollback procedure if a deploy is involved','Link to the relevant SLO dashboard']},
+ right:{title:'Runbook anti-patterns',bullets:['"Investigate the issue" as a step (not actionable)','Runbook last updated over 6 months ago','No expected output for diagnostic commands','Escalation contact is a team alias, not a named on-call','No rollback or mitigation path — only investigation','Requires access the on-call engineer may not have at 3 AM']},
+ callout:'Test your runbooks. Once per quarter, have an engineer outside the team follow the runbook for a non-production incident. If they get stuck, update the runbook before the next real incident.'},
+
+{section:'References',type:'links',
+ title:'The canonical sources behind this model',
+ subtitle:'These are the primary texts. Read them in order — each builds on the last.',
+ links:[
+   {label:'Google SRE Book — How Google Runs Production Systems',url:'https://sre.google/sre-book/table-of-contents/'},
+   {label:'Google SRE Workbook — Implementing SLOs',url:'https://sre.google/workbook/implementing-slos/'},
+   {label:'Google SRE Workbook — Alerting on SLOs',url:'https://sre.google/workbook/alerting-on-slos/'},
+   {label:'Google SRE Workbook — On-Call & Incident Management',url:'https://sre.google/workbook/on-call/'},
+   {label:'Datadog SLO documentation',url:'https://docs.datadoghq.com/service_level_objectives/'},
+   {label:'Grafana SLO documentation',url:'https://grafana.com/docs/grafana-cloud/alerting-and-irm/slo/'}
+ ],
+ footer:'This deck is intentionally vendor-neutral at the SLO/SLI layer so the model transfers across observability stacks.'}
+];
+
+// helpers
+function bl(items){return '<div class="blist">'+items.map(function(t){return'<div class="bitem"><div class="dot"></div><div>'+t+'</div></div>';}).join('')+'</div>';}
+function cd(title,body){return'<div class="card"><div class="ctitle">'+title+'</div>'+body+'</div>';}
+function ch(text,cs){return'<span class="chip '+(cs||'')+'">'+text+'</span>';}
+function hd(s){return'<div class="kicker">'+s.section+'</div><h1 class="stitle">'+s.title+'</h1><p class="ssub">'+s.subtitle+'</p>';}
+function co(t){return'<div class="callout">'+t+'</div>';}
+function no(t){return'<div class="note">'+t+'</div>';}
+
+function render(s){
+  if(s.type==='hero'){
+    return'<div class="hgrid">'+
+      '<div class="card" style="padding:28px 32px;display:flex;flex-direction:column">'+
+        '<div class="kicker">'+s.section+'</div>'+
+        '<h1 class="stitle" style="font-size:clamp(1.75rem,3.2vw,2.9rem)">'+s.title+'</h1>'+
+        '<p class="ssub" style="margin-bottom:16px">'+s.subtitle+'</p>'+
+        '<div class="tags">'+s.tags.map(function(t,i){return ch(t,i>=2&&i<4?'r':'');}).join('')+'</div>'+
+        '<div class="sdiv"></div>'+
+        '<div style="flex:1;min-height:0;overflow:hidden;border-radius:8px;margin-top:4px">'+
+          '<img src="images/Site-Reliability-Engineering-Guide.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;border-radius:8px">'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:13px">'+
+        cd(s.left.title,bl(s.left.bullets))+
+        cd(s.right.title,s.right.items.map(function(x){return'<div class="formula"><div class="fl">'+x.a+'</div><div class="fv">'+x.b+'</div></div>';}).join(''))+
+      '</div>'+
+    '</div>';
+  }
+  if(s.type==='columns'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="g3">'+s.cols.map(function(c){return cd(c.title,bl(c.items));}).join('')+'</div>'+
+      (s.callout?co(s.callout):'')+
+    '</div>';
+  }
+  if(s.type==='cards'){
+    var cls=s.cards.length>4?'g2':'g3';
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="'+cls+'">'+s.cards.map(function(c){
+        return cd(c.name,'<div style="font-size:.88rem;line-height:1.58;margin-bottom:3px">'+c.desc+'</div>'+ch(c.chip,c.cs));
+      }).join('')+'</div>'+
+    '</div>';
+  }
+  if(s.type==='golden'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="g4">'+s.signals.map(function(g){
+        return'<div class="card">'+
+          '<div class="sigicon" style="background:'+g.bg+'">'+g.icon+'</div>'+
+          '<div class="sname" style="color:'+g.color+'">'+g.name+'</div>'+
+          '<div class="sdesc">'+g.desc+'</div>'+
+          '<span class="chip" style="border-color:'+g.color+';color:'+g.color+';background:'+g.bg+'">'+g.metric+'</span>'+
+        '</div>';
+      }).join('')+'</div>'+
+      co(s.callout)+
+    '</div>';
+  }
+  if(s.type==='table'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="twrap"><table class="tbl">'+
+        '<thead><tr>'+s.thead.map(function(h){return'<th>'+h+'</th>';}).join('')+'</tr></thead>'+
+        '<tbody>'+s.rows.map(function(r){return'<tr>'+r.map(function(c){return'<td>'+c+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>'+
+      '</table></div>'+
+      no(s.note)+
+    '</div>';
+  }
+  if(s.type==='metrics'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="g3">'+s.items.map(function(m){
+        return cd(m.top,'<div class="bignum">'+m.big+'</div><div style="font-size:.84rem;color:var(--muted)">'+m.desc+'</div>');
+      }).join('')+'</div>'+
+      (s.footer?no(s.footer):'')+
+    '</div>';
+  }
+  if(s.type==='loop'){
+    var flowHtml=s.flow.map(function(st,i){
+      var arr=i<s.flow.length-1?'<div class="loop-arr">&rarr;</div>':'';
+      return'<div class="loop-step"><div class="loop-num">'+st.num+'</div><div class="loop-label">'+st.label+'</div><div class="loop-desc">'+st.desc+'</div></div>'+arr;
+    }).join('');
+    var analogyHtml=s.analogy.map(function(a){
+      return'<div class="analogy-row"><div class="analogy-concept">'+a.concept+'</div><div class="analogy-val">'+a.val+'</div></div>';
+    }).join('');
+    return'<div style="display:flex;flex-direction:column;gap:16px">'+hd(s)+
+      '<div class="loop-flow">'+flowHtml+'</div>'+
+      '<div class="g2">'+
+        cd('The speedometer analogy','<div style="padding:2px 0">'+analogyHtml+'</div>')+
+        cd(s.right.title,bl(s.right.bullets))+
+      '</div>'+
+      (s.callout?co(s.callout):'')+
+      (s.note?no(s.note):'')+
+    '</div>';
+  }
+  if(s.type==='burnrate'){
+    var tiersHtml=s.tiers.map(function(t){
+      return'<div class="br-tier '+t.cs+'">'+
+        '<div class="br-head"><span class="br-mult '+t.cs+'">'+t.mult+'</span><span class="br-name">'+t.name+'</span></div>'+
+        '<div class="br-meta">Windows: '+t.windows+'</div>'+
+        '<div class="br-body"><b>'+t.impact+'</b></div>'+
+        '<div class="br-example">'+t.example+'</div>'+
+      '</div>';
+    }).join('');
+    var brRows=s.table.map(function(r){
+      return'<tr'+(r.hl?' class="nhl"':'')+'>'+
+        '<td>'+r.rate+'</td><td>'+r.example+'</td><td>'+r.exhausted+'</td>'+
+      '</tr>';
+    }).join('');
+    return'<div style="display:flex;flex-direction:column;gap:16px">'+hd(s)+
+      '<div class="fmla-hero">'+
+        '<div class="fmla-eq">'+s.formula+'</div>'+
+        '<div class="fmla-sub">'+s.formulaNote+'</div>'+
+      '</div>'+
+      '<div class="g2">'+
+        cd('Alert tiers',tiersHtml)+
+        cd('Time to exhaustion &mdash; 30-day window, 99.9% SLO',
+          '<div class="twrap"><table class="nines-tbl">'+
+            '<thead><tr><th>Burn rate</th><th>Example error rate</th><th>Budget gone in</th></tr></thead>'+
+            '<tbody>'+brRows+'</tbody>'+
+          '</table></div>'+
+          '<div style="margin-top:13px;padding:11px 13px;background:rgba(29,78,216,0.05);border-radius:8px;border:1px solid var(--blue-border)">'+
+            '<div style="font-weight:800;font-size:.85rem;margin-bottom:4px">Two-window AND rule</div>'+
+            '<div style="font-size:.82rem;color:var(--muted);line-height:1.55">'+s.twoWindow+'</div>'+
+          '</div>')+
+      '</div>'+
+      co(s.callout)+
+    '</div>';
+  }
+  if(s.type==='slomath'){
+    var steps=s.steps.map(function(st){
+      return'<tr><td class="slbl">'+st.label+'</td><td class="seq">'+st.eq+'</td></tr>';
+    }).join('');
+    var nrows=s.nines.map(function(n){
+      return'<tr'+(n.hl?' class="nhl"':'')+'>'+
+        '<td>'+n.slo+'</td><td>'+n.downtime+'</td><td>'+n.bad+'</td>'+
+      '</tr>';
+    }).join('');
+    return'<div style="display:flex;flex-direction:column;gap:16px">'+hd(s)+
+      '<div class="fmla-hero">'+
+        '<div class="fmla-eq">'+s.formula+'</div>'+
+        '<div class="fmla-sub">'+s.formulaNote+'</div>'+
+      '</div>'+
+      '<div class="g2">'+
+        cd('Worked example &mdash; 99.9% SLO, 30-day window','<table class="step-tbl">'+steps+'</table>')+
+        cd('What each additional nine actually costs',
+          '<div class="twrap"><table class="nines-tbl">'+
+            '<thead><tr><th>SLO</th><th>Downtime / month</th><th>Allowed failures / 30 M req</th></tr></thead>'+
+            '<tbody>'+nrows+'</tbody>'+
+          '</table></div>')+
+      '</div>'+
+      (s.callout?co(s.callout):'')+
+      (s.note?no(s.note):'')+
+    '</div>';
+  }
+  if(s.type==='threepane'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="g3">'+s.cols.map(function(c){return cd(c.title,bl(c.items));}).join('')+'</div>'+
+      (s.callout?co(s.callout):'')+
+      (s.note?no(s.note):'')+
+    '</div>';
+  }
+  if(s.type==='twopane'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="g2">'+cd(s.left.title,bl(s.left.bullets))+cd(s.right.title,bl(s.right.bullets))+'</div>'+
+      (s.callout?co(s.callout):'')+
+      (s.note?no(s.note):'')+
+      (s.footer?'<div style="font-size:.84rem;color:var(--muted);line-height:1.6">'+s.footer+'</div>':'')+
+    '</div>';
+  }
+  if(s.type==='toil'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div class="g2">'+s.props.map(function(p){
+        return'<div class="tprop"><div class="rdot"></div><div><div class="tlabel">'+p.label+'</div><div class="tdesc">'+p.desc+'</div></div></div>';
+      }).join('')+'</div>'+
+      co(s.callout)+
+    '</div>';
+  }
+  if(s.type==='links'){
+    return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
+      '<div>'+s.links.map(function(l){
+        return'<a class="reflink" href="'+l.url+'" target="_blank" rel="noreferrer">'+
+          '<div><div class="rtitle">'+l.label+'</div><div class="rurl">'+l.url+'</div></div>'+
+          ch('Open →')+
+        '</a>';
+      }).join('')+'</div>'+
+      (s.footer?no(s.footer):'')+
+    '</div>';
+  }
+  return hd(s);
+}
+
+// state
+var idx=0;
+function go(n){
+  idx=Math.max(0,Math.min(n,SLIDES.length-1));
+  draw();
+}
+function draw(){
+  var s=SLIDES[idx],total=SLIDES.length;
+  // nav list
+  var nl=document.getElementById('navlist');
+  nl.innerHTML=SLIDES.map(function(sl,i){
+    return'<div class="ni'+(i===idx?' on':'')+'" data-i="'+i+'">'+
+      '<div class="ns">'+String(i+1).padStart(2,'0')+' · '+sl.section+'</div>'+
+      '<div class="nt">'+sl.title+'</div>'+
+    '</div>';
+  }).join('');
+  nl.querySelectorAll('.ni').forEach(function(el){
+    el.addEventListener('click',function(){go(+el.dataset.i);});
+  });
+  var active=nl.querySelector('.ni.on');
+  if(active)active.scrollIntoView({block:'nearest'});
+  // topbar
+  document.getElementById('schip').textContent=s.section;
+  document.getElementById('scount').textContent=(idx+1)+' / '+total;
+  document.getElementById('progbar').style.width=((idx+1)/total*100)+'%';
+  // slide (with fade)
+  var panel=document.getElementById('panel');
+  panel.classList.add('fade-out');
+  setTimeout(function(){
+    panel.innerHTML=render(s);
+    panel.classList.remove('fade-out');
+  },100);
+  document.getElementById('bprev').disabled=idx===0;
+  document.getElementById('bnext').disabled=idx===total-1;
+  // scroll to top
+  document.getElementById('frame').scrollTop=0;
+}
+document.getElementById('bprev').onclick=function(){if(idx>0)go(idx-1);};
+document.getElementById('bnext').onclick=function(){if(idx<SLIDES.length-1)go(idx+1);};
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();if(idx<SLIDES.length-1)go(idx+1);}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();if(idx>0)go(idx-1);}
+  if(e.key==='f'||e.key==='F'){toggleFullscreen();}
+});
+// sidebar toggle
+document.getElementById('sidebartoggle').onclick=function(){
+  document.getElementById('app').classList.toggle('collapsed');
+};
+// fullscreen
+function toggleFullscreen(){
+  if(!document.fullscreenElement){document.documentElement.requestFullscreen();}
+  else{document.exitFullscreen();}
+}
+document.getElementById('fsbtn').onclick=toggleFullscreen;
+// dark mode toggle
+var dark=localStorage.getItem('dark')==='1';
+function applyDark(){
+  document.body.classList.toggle('dark',dark);
+  document.getElementById('dmlabel').textContent=dark?'DARK':'LIGHT';
+  document.getElementById('dmthumb').textContent=dark?'🌙':'☀️';
+}
+applyDark();
+document.getElementById('dmtoggle').addEventListener('click',function(){
+  dark=!dark;
+  localStorage.setItem('dark',dark?'1':'0');
+  applyDark();
+});
+draw();
+</script>
+</body>
+</html>

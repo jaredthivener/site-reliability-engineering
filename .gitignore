@@ -1,0 +1,4 @@
+.github/
+.lean-ctx/
+.vscode/
+.DS_Store
