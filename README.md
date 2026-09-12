@@ -31,13 +31,15 @@ An interactive, self-contained SRE training deck built as a single HTML file. No
 
 ## Usage
 
+Clone the repo and serve it with a local web server:
+
 ```bash
-# Clone and open — that's it
 git clone https://github.com/jaredthivener/site-reliability-engineering.git
 cd site-reliability-engineering
-open sre-deck.html     # macOS
-# xdg-open sre-deck.html  # Linux
+python3 -m http.server 8000
 ```
+
+Then open `http://localhost:8000/sre-deck.html` in your browser.
 
 Navigate with arrow keys or the sidebar. Toggle dark mode with the button in the top-right corner.
 
