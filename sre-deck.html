@@ -37,6 +37,15 @@ body{
     var(--bg);
 }
 #app{display:grid;grid-template-columns:288px 1fr;height:100%}
+#printAll{display:none}
+#notesDrawer{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:var(--surface);border-top:1px solid var(--line);
+  padding:12px 24px 16px;box-shadow:0 -10px 30px rgba(8,15,30,0.12);
+  max-height:26vh;overflow-y:auto;
+}
+#notesLabel{font-family:var(--mono);font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+#notesContent{font-size:.88rem;line-height:1.55;color:var(--ink);max-width:900px}
 
 /* sidebar */
 #sidebar{
@@ -87,7 +96,7 @@ hr.div{border:none;border-top:1px solid var(--line)}
 #progbar{height:100%;border-radius:999px;background:linear-gradient(90deg,#1d4ed8,#0ea5e9);transition:width .28s ease}
 #frame{flex:1;overflow-y:auto;padding-right:5px}
 #panel{
-  min-height:calc(100vh - 124px);
+  height:calc(100vh - 124px);
   background:rgba(255,255,255,0.90);
   border:1px solid var(--line);
   border-radius:var(--r);
@@ -124,7 +133,6 @@ hr.div{border:none;border-top:1px solid var(--line)}
 .ctitle{font-weight:800;font-size:.90rem;margin-bottom:8px}
 
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 .hgrid{display:grid;grid-template-columns:1.3fr 0.9fr;gap:18px;align-items:start}
@@ -170,10 +178,12 @@ hr.div{border:none;border-top:1px solid var(--line)}
 .br-tier:last-child{margin-bottom:0}
 .br-tier.r{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.22)}
 .br-tier.a{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.22)}
+.br-tier.g{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.22)}
 .br-head{display:flex;align-items:baseline;gap:11px;margin-bottom:4px}
 .br-mult{font-family:var(--mono);font-size:1.55rem;font-weight:700;line-height:1}
 .br-mult.r{color:var(--red)}
 .br-mult.a{color:var(--amber)}
+.br-mult.g{color:var(--green)}
 .br-name{font-weight:800;font-size:.90rem}
 .br-meta{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:5px;letter-spacing:.03em}
 .br-body{font-size:.83rem;line-height:1.52;color:var(--muted)}
@@ -207,7 +217,7 @@ hr.div{border:none;border-top:1px solid var(--line)}
 .rurl{font-family:var(--mono);font-size:.69rem;color:var(--muted);margin-top:2px}
 
 .tprop{display:flex;gap:9px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-sm)}
-.rdot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:.45em}
+.rdot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:.45em}
 .tlabel{font-weight:800;font-size:.86rem;margin-bottom:3px}
 .tdesc{font-size:.82rem;color:var(--muted);line-height:1.5}
 
@@ -276,8 +286,14 @@ body.dark .toggle-thumb{transform:translateX(16px);background:#4f84f8}
   body,html{overflow:auto;height:auto}
   #canvas{padding:12px}
   #frame{overflow:visible;flex:none}
-  #panel{min-height:auto;padding:20px}
+  #panel{height:auto;padding:20px}
   .hgrid,.g2,.g3,.g4{grid-template-columns:1fr}
+  #topbar{position:relative;z-index:60;background:var(--bg);padding-bottom:4px}
+  #app.mobilenav-open #sidebar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    top:104px;width:100%;padding:16px;
+    background:var(--bg);
+  }
 }
 
 /* sidebar collapse */
@@ -309,16 +325,13 @@ body.dark .toggle-thumb{transform:translateX(16px);background:#4f84f8}
 #panel{transition:opacity .15s ease,background .22s,color .22s,border-color .22s,box-shadow .22s}
 #panel.fade-out{opacity:0}
 
-/* toil amber dot */
-.rdot{background:var(--amber)!important}
-
 @media print{
   *{overflow:visible!important}
-  #sidebar,#topbar,#prog,#fbar{display:none!important}
-  #app{display:block}
-  #canvas{padding:0}
-  #frame{overflow:visible}
-  #panel{box-shadow:none;border:none;border-radius:0;min-height:0;padding:24px 28px;page-break-after:always}
+  #app{display:none!important}
+  #printAll{display:block!important}
+  body,html{height:auto;overflow:visible}
+  .panel-print{border:none;box-shadow:none;border-radius:0;padding:24px 28px;page-break-after:always}
+  .panel-print:last-child{page-break-after:auto}
   .hgrid,.g2,.g3,.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 }
 </style>
@@ -333,10 +346,11 @@ body.dark .toggle-thumb{transform:translateX(16px);background:#4f84f8}
     <hr class="div"/>
     <div id="navlist"></div>
     <hr class="div"/>
+    <div class="kbhint">&larr; &rarr; navigate &middot; F fullscreen &middot; N notes</div>
   </aside>
   <main id="canvas">
     <div id="topbar">
-      <div><div class="dlabel">Principal Engineer · Internal Training Deck</div><div class="dtitle">SRE Reliability Model</div></div>
+      <div><div class="dlabel">Principal Engineer · Internal Training Deck</div><div class="dtitle">SRE Fundamentals</div></div>
       <div class="tright">
         <span class="schip" id="schip"></span>
         <span class="scount" id="scount"></span>
@@ -358,10 +372,83 @@ body.dark .toggle-thumb{transform:translateX(16px);background:#4f84f8}
     </div>
   </main>
 </div>
+<div id="printAll" aria-hidden="true"></div>
+<div id="notesDrawer" hidden>
+  <div id="notesLabel">SPEAKER NOTES <span style="font-weight:400;opacity:.7">— press N to close</span></div>
+  <div id="notesContent"></div>
+</div>
 <script>
+function dot(c){return'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--'+c+');margin-right:7px;vertical-align:middle"></span>';}
+var ICON_PATHS={
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  broadcast:'<circle cx="12" cy="14" r="2"/><path d="M8.5 9a5 5 0 000 6"/><path d="M15.5 9a5 5 0 010 6"/><path d="M5.3 6a9 9 0 000 12"/><path d="M18.7 6a9 9 0 010 12"/>',
+  alert:'<circle cx="12" cy="12" r="9"/><path d="M12 7.5v6"/><path d="M12 16.3h.01"/>',
+  bars:'<path d="M4 20V13"/><path d="M10.5 20V6"/><path d="M17 20v-9"/>',
+  check:'<path d="M4 12.5l4.5 4.5L20 6"/>',
+  cross:'<path d="M6 6l12 12"/><path d="M18 6L6 18"/>'
+};
+function svgIcon(name,color,size){
+  size=size||18;
+  return'<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px">'+ICON_PATHS[name]+'</svg>';
+}
+// error budget burn-down: sustainable rate vs. a 2x burn exhausting the budget by day 15
+function chartBurndown(){
+  return'<svg viewBox="0 0 600 190" style="width:100%;height:auto" role="img" aria-label="Error budget burn-down chart: sustainable rate versus a 2x burn exhausting the budget by day 15">'+
+    '<style>.cbd-ax{stroke:var(--line);stroke-width:1}.cbd-s{stroke:var(--blue);stroke-width:2.5;fill:none}.cbd-b{stroke:var(--red);stroke-width:2.5;fill:none}.cbd-l{font:600 11px var(--mono);fill:var(--muted)}</style>'+
+    '<line class="cbd-ax" x1="50" y1="10" x2="50" y2="150"/>'+
+    '<line class="cbd-ax" x1="50" y1="150" x2="580" y2="150"/>'+
+    '<line class="cbd-s" x1="50" y1="10" x2="580" y2="150"/>'+
+    '<line class="cbd-b" x1="50" y1="10" x2="315" y2="150"/>'+
+    '<line class="cbd-b" x1="315" y1="150" x2="580" y2="150" stroke-dasharray="4 4"/>'+
+    '<circle cx="315" cy="150" r="4" fill="var(--red)"/>'+
+    '<text class="cbd-l" x="315" y="168" text-anchor="middle">Day 15: budget gone</text>'+
+    '<text class="cbd-l" x="50" y="168" text-anchor="start">Day 0</text>'+
+    '<text class="cbd-l" x="580" y="168" text-anchor="end">Day 30</text>'+
+    '<text class="cbd-l" x="42" y="14" text-anchor="end">100%</text>'+
+    '<text class="cbd-l" x="42" y="154" text-anchor="end">0%</text>'+
+    '<text class="cbd-l" x="560" y="28" text-anchor="end" style="fill:var(--blue)">Sustainable (1&times;)</text>'+
+    '<text class="cbd-l" x="330" y="110" style="fill:var(--red)">Actual burn (2&times;)</text>'+
+  '</svg>';
+}
+// time-to-exhaustion bars, same figures as the burn-rate table above them
+function chartExhaustionBars(){
+  var rows=[
+    {label:'14.4&times;',days:50/24,vlab:'~50 h',color:'var(--red)'},
+    {label:'6&times;',days:5,vlab:'5 days',color:'var(--amber)'},
+    {label:'3&times;',days:10,vlab:'10 days',color:'var(--blue)'},
+    {label:'2&times;',days:15,vlab:'15 days',color:'var(--blue)'},
+    {label:'1&times;',days:30,vlab:'30 days (miss)',color:'var(--green)'}
+  ];
+  var max=30,rowH=30;
+  var bars=rows.map(function(r,i){
+    var y=i*rowH+6,w=(r.days/max)*250;
+    return'<text x="0" y="'+(y+15)+'" class="ceb-l" text-anchor="start">'+r.label+'</text>'+
+      '<rect x="56" y="'+y+'" width="'+w+'" height="18" rx="4" fill="'+r.color+'" opacity="0.85"/>'+
+      '<text x="'+(64+w)+'" y="'+(y+14)+'" class="ceb-v">'+r.vlab+'</text>';
+  }).join('');
+  return'<svg viewBox="0 0 460 156" style="width:100%;height:auto" role="img" aria-label="Time to exhaust the error budget at each burn rate — shortest bar is most urgent">'+
+    '<style>.ceb-l{font:700 12px var(--mono);fill:var(--ink)}.ceb-v{font:600 11px var(--mono);fill:var(--muted)}</style>'+
+    bars+
+  '</svg>';
+}
+// illustrative relative engineering effort per nine — not measured data, see caption/source
+function chartCostCurve(){
+  var vals=[1,2,4,10,40],labels=['99%','99.9%','99.95%','99.99%','99.999%'],max=40;
+  var bars=vals.map(function(v,i){
+    var x=i*94+30,h=(v/max)*120,y=150-h;
+    return'<rect x="'+x+'" y="'+y+'" width="48" height="'+h+'" rx="4" fill="var(--blue)" opacity="'+(0.4+i*0.14).toFixed(2)+'"/>'+
+      '<text x="'+(x+24)+'" y="166" text-anchor="middle" class="ccc-l">'+labels[i]+'</text>'+
+      '<text x="'+(x+24)+'" y="'+(y-7)+'" text-anchor="middle" class="ccc-v">'+v+'&times;</text>';
+  }).join('');
+  return'<svg viewBox="0 0 500 180" style="width:100%;height:auto" role="img" aria-label="Illustrative relative engineering effort rising sharply with each additional nine of reliability">'+
+    '<style>.ccc-l{font:700 11px var(--mono);fill:var(--muted)}.ccc-v{font:700 12px var(--mono);fill:var(--blue)}</style>'+
+    bars+
+  '</svg>';
+}
 var SLIDES=[
 {section:'Foundations',type:'hero',
  title:'SRE for SaaS: defining reliability as a product promise',
+ notes:"Open by framing the whole deck as one argument: reliability is measurable, decidable, and governable — not a feeling. Don't dive into definitions yet, that's next.",
  subtitle:'How SLIs, SLOs, and error budgets turn operational risk into engineering decisions.',
  left:{title:'What this deck covers',bullets:['SRE model — reliability as an engineering discipline','The Four Golden Signals','Critical User Journeys (CUJs): the right measurement boundary','Designing SLIs that reflect user experience','Setting SLO targets and time windows','How error budgets shape release policy','Burn-rate alerting: catching risk before breach','Postmortem culture and toil reduction','Applying this model on AWS EKS SaaS']},
  right:{title:'Core thesis',items:[{a:'Measure',b:'What users feel'},{a:'Objective',b:'What acceptable looks like'},{a:'Budget',b:'How much risk remains'},{a:'Policy',b:'What changes when budget runs out'}]},
@@ -369,6 +456,7 @@ var SLIDES=[
 
 {section:'SRE Model',type:'columns',
  title:'What SRE is really optimising for',
+ notes:"Emphasize the three columns are connected: product outcomes are what error budgets protect, engineering mechanisms are how you protect them, decision levers are who gets to decide when you can't have both.",
  subtitle:'Engineering reliability as a system, not as a feeling. Risk is the shared currency between product and engineering.',
  cols:[
    {title:'Product outcomes',items:['Availability','Latency','Correctness','Freshness','Durability']},
@@ -379,6 +467,7 @@ var SLIDES=[
 
 {section:'Terminology',type:'cards',
  title:'The vocabulary that keeps teams aligned',
+ notes:"Slow down here — most SLO disagreements later in the room trace back to someone using SLO and SLA interchangeably. Get agreement on these six terms before moving on.",
  subtitle:'Use these terms precisely — imprecision is the root of most measurement failures.',
  cards:[
    {name:'SLI',desc:'A quantitative measure of a service level. The ratio of good events to total events over a rolling window.',chip:'good_requests / total_requests',cs:''},
@@ -391,24 +480,47 @@ var SLIDES=[
 
 {section:'Four Golden Signals',type:'golden',
  title:"Start here: Google's Four Golden Signals",
+ notes:"Ask the room which signal their current dashboards actually track. Usually it's only errors — that's the gap this deck closes.",
  subtitle:'From the SRE book: if you can only measure four things, measure these. Every SLI worth building maps to at least one.',
  signals:[
-   {icon:'⏱',color:'#1d4ed8',bg:'rgba(29,78,216,0.09)',name:'Latency',desc:'Time to serve a request. Distinguish successful latency from error latency — slow errors mask real performance.',metric:'p50 / p95 / p99 request duration'},
-   {icon:'📡',color:'#0ea5e9',bg:'rgba(14,165,233,0.09)',name:'Traffic',desc:'Demand on the system. For APIs: RPS. For storage: IOPS. For streaming: messages/sec.',metric:'requests per second (RPS)'},
-   {icon:'🔴',color:'#dc2626',bg:'rgba(220,38,38,0.08)',name:'Errors',desc:'Rate of failed requests — explicit (5xx), implicit (200 + wrong body), or policy violations.',metric:'error_count / total_requests'},
-   {icon:'📊',color:'#d97706',bg:'rgba(217,119,6,0.09)',name:'Saturation',desc:'How "full" the service is. A leading indicator — latency and errors degrade before saturation hits 100%.',metric:'CPU%, memory%, queue depth'}
+   {icon:'clock',color:'#1d4ed8',bg:'rgba(29,78,216,0.09)',name:'Latency',desc:'Time to serve a request. Distinguish successful latency from error latency — slow errors mask real performance.',metric:'p50 / p95 / p99 request duration'},
+   {icon:'broadcast',color:'#0ea5e9',bg:'rgba(14,165,233,0.09)',name:'Traffic',desc:'Demand on the system. For APIs: RPS. For storage: IOPS. For streaming: messages/sec.',metric:'requests per second (RPS)'},
+   {icon:'alert',color:'#dc2626',bg:'rgba(220,38,38,0.08)',name:'Errors',desc:'Rate of failed requests — explicit (5xx), implicit (200 + wrong body), or policy violations.',metric:'error_count / total_requests'},
+   {icon:'bars',color:'#d97706',bg:'rgba(217,119,6,0.09)',name:'Saturation',desc:'How "full" the service is. A leading indicator — latency and errors degrade before saturation hits 100%.',metric:'CPU%, memory%, queue depth'}
  ],
  callout:'Latency and Errors are the most universal starting points for request-driven SaaS. Every SLI should map back to at least one signal.'},
 
 {section:'Critical User Journeys',type:'twopane',
  title:'Define SLIs around Critical User Journeys',
+ notes:"Push back if someone says we already have SLIs — ask whether those SLIs map to a CUJ a real user experiences, or just an endpoint that was easy to instrument.",
  subtitle:'A CUJ is the sequence of actions a user takes to accomplish a goal. SLIs should cover the whole journey, not just a single endpoint.',
  left:{title:'How to identify CUJs',bullets:['Map what users actually do — not what the system exposes','Identify where user pain translates to business impact','Start with login/auth, primary write, and core read paths','Validate with support tickets and NPS/CSAT data','Pick 3–5 CUJs that cover ~80% of user value']},
  right:{title:'Example CUJs for a SaaS platform',bullets:['Sign in → reach the dashboard (auth CUJ)','Create and submit a report (write CUJ)','Load and view a dashboard (read CUJ)','Receive and process a webhook (async CUJ)','Export data to CSV / PDF (egress CUJ)']},
  note:'Each CUJ gets its own SLI and SLO. This forces full journey instrumentation, not just outermost load-balancer metrics. In multi-tenant SaaS, measure CUJs per cohort (tier, region, or tenant) — aggregate SLIs can mask one tenant\'s severe degradation inside a healthy average.'},
 
+{section:'SLI Specification',type:'twopane',
+ title:'Specification and implementation are different decisions',
+ notes:"This is the slide that prevents a costly rebuild later — a team that skips the specification step often re-implements its SLI from scratch when logs and RUM disagree.",
+ subtitle:'One SLI has two layers: what you promise to measure, and how you actually measure it. Confusing them is the most common SLI failure.',
+ left:{title:'Specification vs. implementation',bullets:[
+   'Specification: the outcome that matters to users, independent of how it\'s measured — e.g. "home page requests load in under 100 ms"',
+   'Implementation: the specification plus a concrete measurement method — server access logs, browser-side RUM, or a synthetic probe',
+   'The same specification measured three ways gives three different numbers — each trading off coverage, accuracy, and cost differently',
+   'One specification can have multiple valid implementations; choosing one is a measurement-boundary decision, not a math problem',
+   'Document the specification and implementation separately — implementations change as instrumentation improves; the specification should not'
+ ]},
+ right:{title:'SLI categories by service type',bullets:[
+   '<b>Request-driven services</b> (APIs, web apps): Availability, Latency, Quality',
+   '<b>Pipeline / data-processing services</b> (batch, streaming, ETL): Freshness, Correctness, Coverage',
+   '<b>Storage systems</b>: Durability',
+   'Pick categories that match your service type first — an availability SLI on a batch pipeline measures the wrong thing',
+   'Most SaaS platforms are a mix: request-driven APIs plus async pipelines, each needing their own SLI category'
+ ]},
+ note:'Source: Google SRE Workbook, Chapter 2 — Implementing SLOs. <a href="https://sre.google/workbook/implementing-slos/" target="_blank" rel="noreferrer">sre.google/workbook/implementing-slos</a>'},
+
 {section:'SLI Design',type:'twopane',
  title:'How to design the right SLI',
+ notes:"Have the room name one metric they currently alert on that belongs in the avoid column — it's almost always pod restart count or CPU.",
  subtitle:'Choose indicators that are precise, automatable, and tied to customer impact.',
  left:{title:'Good SLIs are…',bullets:['User-centric: maps to something a user feels','Countable: a ratio of good events to total events','Windowed: evaluated over a defined rolling period','Hard to game and easy to explain in a postmortem','Derived from real request, job, or CUJ data']},
  right:{title:'Avoid these as primary SLIs',bullets:['CPU or memory utilisation in isolation','Node or pod count','Pod restart rate (a symptom, not the pain)','Deployment frequency (a velocity metric)','Synthetic probes that don\'t reflect real traffic']},
@@ -416,6 +528,7 @@ var SLIDES=[
 
 {section:'SLO as Contract',type:'loop',
  title:'The target comes first. The measurement proves whether you\'re meeting it.',
+ notes:"The speedometer analogy is the one people repeat back weeks later — spend real time on it rather than rushing to the math slide.",
  subtitle:'A ratio on a dashboard is meaningless without a prior commitment. SLOs are contracts, not observations.',
  flow:[
    {num:'01',label:'Decide',desc:'Agree on the failure threshold where users actually notice pain — before any data exists'},
@@ -441,6 +554,7 @@ var SLIDES=[
 
 {section:'SLO Design',type:'table',
  title:'Setting SLO targets without hand-waving',
+ notes:"Anchor the numbers in this table to something the audience's own service actually needs — don't let 99.9% become a reflexive default.",
  subtitle:'Use customer expectation, business impact, and operational maturity to shape the number.',
  thead:['CUJ / Capability','SLI','Window','SLO'],
  rows:[
@@ -453,8 +567,9 @@ var SLIDES=[
  ],
  note:'The best SLO is strict enough to reflect real customer pain and realistic enough to govern against. Aspirational nines that are never enforced destroy trust.'},
 
-{section:'SLO Math',type:'slomath',
+{section:'SLO Math',type:'slomath',chart:'costcurve',
  title:'From percentage to budget: the arithmetic behind SLOs',
+ notes:"Walk the worked example on the board, don't just read it — the arithmetic is simple but the first time through, people need to see it built step by step.",
  subtitle:'Every SLO percentage is a ratio. Understanding the arithmetic prevents the most common target-setting mistakes.',
  formula:'SLI  =  good_events  ÷  valid_events  ×  100',
  formulaNote:'Always a ratio — latency SLIs count "requests completing under threshold" as the good_event, not raw duration',
@@ -463,65 +578,134 @@ var SLIDES=[
    {label:'Error budget', eq:'1 &minus; 0.999  =  <b>0.001</b>  &rarr;  0.1% of requests may fail'},
    {label:'Volume',       eq:'1 M req/day &times; 30 days  =  <b>30,000,000</b> total requests'},
    {label:'Allowed bad',  eq:'30,000,000 &times; 0.001  =  <b>30,000</b> failures permitted'},
-   {label:'Breach check', eq:'35,000 failures &gt; 30,000  &rarr;  <b>SLO missed</b> by 5,000 requests'},
-   {label:'Burn rate',    eq:'actual_err_rate &divide; (1 &minus; SLO)  &rarr;  <b>14&times;</b> exhausts budget in ~52 h'}
+   {label:'Breach check', eq:'35,000 failures &gt; 30,000  &rarr;  <b>SLO missed</b> by 5,000 requests (rate 0.117% vs. 0.1% allowed)'},
+   {label:'Burn rate',    eq:'A live 1.44% error rate &divide; 0.1% budget  &rarr;  <b>14.4&times;</b> burn &mdash; exhausts in &asymp;50 h if sustained'}
  ],
  nines:[
    {slo:'99%',    downtime:'7.2 h / month',   bad:'300,000'},
    {slo:'99.5%',  downtime:'3.6 h / month',   bad:'150,000'},
-   {slo:'99.9%',  downtime:'43.8 min / month', bad:'30,000',  hl:true},
-   {slo:'99.95%', downtime:'21.9 min / month', bad:'15,000'},
-   {slo:'99.99%', downtime:'4.3 min / month',  bad:'3,000'}
+   {slo:'99.9%',  downtime:'43.2 min / month', bad:'30,000',  hl:true},
+   {slo:'99.95%', downtime:'21.6 min / month', bad:'15,000'},
+   {slo:'99.99%', downtime:'4.32 min / month', bad:'3,000'}
  ],
  callout:'Choose your SLO based on the threshold where users actually notice pain — not on the prestige of the number. A 99.99% SLO with no enforcement mechanism is worse than a 99.9% SLO that drives real engineering decisions.',
- note:'Reference: Google SRE Workbook, Chapter 2 — Implementing SLOs. The worked arithmetic above is the same model Google uses internally.'},
+ note:'Reference: Google SRE Workbook, Chapter 2 — Implementing SLOs (<a href="https://sre.google/workbook/implementing-slos/" target="_blank" rel="noreferrer">sre.google/workbook/implementing-slos</a>). The worked arithmetic above matches Google\'s internal model. Window choice: the Workbook recommends a <b>4-week rolling window</b> (28 days, spanning integral weeks so weekday/weekend traffic mix stays consistent) over a calendar month — calendar windows create a "budget resets on the 1st, ship everything" pathology near period boundaries.'},
 
-{section:'Error Budgets',type:'metrics',
+{section:'Composite SLOs',type:'slomath',
+ title:'Your SLO can only promise what your dependency chain allows',
+ notes:"This is usually the slide that changes minds — most teams have never multiplied their dependency SLAs together and are surprised by the ceiling.",
+ subtitle:'A composite SLO is a product distribution of its dependencies — every hard dependency you add multiplies your ceiling down, not up.',
+ formula:'composite_SLO  =  SLO&#8321; &times; SLO&#8322; &times; &hellip; &times; SLO&#8345;',
+ formulaNote:'Serial hard dependencies multiply. Two 99.9% dependencies in series cap you at 99.8% &mdash; not 99.9% &mdash; before you\'ve written a line of your own code.',
+ stepsTitle:'Worked example &mdash; Azure WAF composite SLO (adapted)',
+ steps:[
+   {label:'Front Door',      eq:'99.98%  <span style="color:var(--muted)">(adjusted for uncovered features)</span>'},
+   {label:'Container Apps',  eq:'&times; 99.95%'},
+   {label:'SQL Managed Instance', eq:'&times; 99.80%  <span style="color:var(--muted)">(adjusted down for schema/backup risk)</span>'},
+   {label:'Private Link',    eq:'&times; 99.99%'},
+   {label:'Platform composite', eq:'=  <b>99.72%</b>  &rarr; plus other network deps &rarr; <b>99.68%</b>'},
+   {label:'Ceiling',         eq:'This is the <b>most</b> your architecture can deliver &mdash; before code, config, or ops risk'}
+ ],
+ tableTitle:'Layering in code, config, and ops risk',
+ nineshead:['Layer','Composite SLO (per month)'],
+ nines:[
+   {layer:'Platform (Azure component availability)', slo:'99.68%'},
+   {layer:'&times; Application code (bugs, bad deploys)', slo:'99.86%'},
+   {layer:'&times; Resource &amp; app configuration', slo:'99.95%'},
+   {layer:'&times; Operations (deploys, patching, certs)', slo:'99.95%'},
+   {layer:'Overall composite SLO (internal target)', slo:'99.45%', hl:true}
+ ],
+ callout:'The published SLA here is 99.90% — higher than the 99.45% the architecture actually predicts. That gap is a deliberate, informed business bet (legal/finance priced it against customer growth), not an engineering promise. This is exactly why SLA and SLO must be set independently, never derived from each other. Cheapest way to buy a nine is usually removing a hard dependency or making it soft (fallback on failure) — not adding redundancy after the fact.',
+ note:'Source: Microsoft Azure Well-Architected Framework, Reliability — RE:04 Define reliability and recovery targets, worked "Contoso" example. <a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/metrics" target="_blank" rel="noreferrer">learn.microsoft.com/azure/well-architected/reliability/metrics</a>'},
+
+{section:'Error Budgets',type:'metrics',chart:'burndown',
  title:'Error budgets convert reliability into a policy control',
+ notes:"Point at the burn-down chart and ask: if this were your service last month, would anyone have noticed before day 15? That's the alerting slide's whole justification.",
  subtitle:'The budget is the rate at which the SLO may be missed before the team changes behaviour.',
  items:[
-   {top:'99.9% SLO',big:'~43.8 min/month',desc:'Typical baseline for most SaaS APIs — generous enough to ship continuously'},
-   {top:'99.95% SLO',big:'~21.9 min/month',desc:'Critical auth or write paths — roughly 22 minutes of allowed downtime per month'},
-   {top:'99.99% SLO',big:'~4.4 min/month',desc:'Reserved for highly sensitive surfaces; nearly always requires multi-region active-active'}
+   {top:'99.9% SLO',big:'~43.2 min/month',desc:'Typical baseline for most SaaS APIs — generous enough to ship continuously'},
+   {top:'99.95% SLO',big:'~21.6 min/month',desc:'Critical auth or write paths — roughly 22 minutes of allowed downtime per month'},
+   {top:'99.99% SLO',big:'~4.3 min/month',desc:'Reserved for highly sensitive surfaces; nearly always requires multi-region active-active'}
  ],
  footer:"Google SRE: insisting on 100% availability is almost always the wrong target. A zero error budget freezes innovation and fails to distinguish impactful failures from unnoticed ones."},
 
 {section:'Governance',type:'threepane',
  title:'How the error budget drives decisions',
+ notes:"Ask who in the room currently has the authority to invoke the red-tier response — if the answer is unclear, that's the actual gap, not the policy text.",
  subtitle:'A healthy SRE program makes release decisions objective, not political.',
  cols:[
-   {title:'🟢  Budget healthy (>50%)',items:['Ship at normal velocity','Continue experiments and feature flags','Run chaos / resilience exercises','Invest in new observability improvements']},
-   {title:'🟡  Budget degraded (10–50%)',items:['Increase deploy scrutiny — require SRE review','Freeze highest-risk changes','Accelerate toil automation backlog','Review recent incidents for systemic patterns']},
-   {title:'🔴  Budget exhausted (<10%)',items:['Pause risky releases until budget recovers','Shift engineering capacity to reliability work','Trigger deeper incident and postmortem review','Reduce change rate; focus on toil reduction']}
+   {title:dot('green')+'Budget healthy (&gt;50%)',items:['Ship at normal velocity','Continue experiments and feature flags','Run chaos / resilience exercises','Invest in new observability improvements']},
+   {title:dot('amber')+'Budget degraded (10&ndash;50%)',items:['Increase deploy scrutiny — require SRE review','Freeze highest-risk changes','Accelerate toil automation backlog','Review recent incidents for systemic patterns']},
+   {title:dot('red')+'Budget exhausted (&lt;10%)',items:['Pause risky releases until budget recovers','Shift engineering capacity to reliability work','Trigger deeper incident and postmortem review','Reduce change rate; focus on toil reduction']}
  ],
  callout:'The budget is not a report card. It is an allocation mechanism that lets product and SRE negotiate velocity vs. reliability without escalating every time.'},
 
 {section:'Alerting',type:'burnrate',
  title:'Burn-rate alerting: see risk before the SLO is breached',
+ notes:"This is the technical core of the deck — don't rush it. Make sure the two-window explanation lands before moving to the bar chart.",
  subtitle:'Alert on budget consumption rate, not raw error counts. The multiplier tells you how many times faster than sustainable you are burning.',
  formula:'burn_rate  =  error_rate  &divide;  (1 &minus; SLO_target)',
- formulaNote:'Dimensionless ratio. At 1&times; you exhaust the budget exactly at the window deadline &mdash; a guaranteed miss. At 14&times; you exhaust it in 1/14 of the window (&asymp;52 h on a 30-day budget). Same threshold works at any traffic volume because it is always relative to your SLO budget.',
+ formulaNote:'Dimensionless ratio. At 1&times; you exhaust the budget exactly at the window deadline &mdash; a guaranteed miss. At 14.4&times; you exhaust it in 1/14.4 of the window (&asymp;50 h of a 30-day budget). Same threshold works at any traffic volume because it is always relative to your SLO budget.',
  tiers:[
-   {mult:'14&times;',name:'Page: Fast burn',windows:'1 h  AND  6 h',cs:'r',
-    impact:'Budget gone in 30 &divide; 14 &asymp; 52 h. Requires immediate human response.',
-    example:'Example &rarr; 1.4% errors on 99.9% SLO: &nbsp; 1.4 &divide; 0.1 = 14&times;'},
-   {mult:'1&times;',name:'Ticket: Slow burn',windows:'6 h  AND  3 days',cs:'a',
-    impact:'Budget exhausts exactly at the deadline &mdash; a silent, guaranteed SLO miss. No fast-burn alert ever fires. Actionable next business day.',
+   {mult:'14.4&times;',name:'Page: Fast burn',windows:'1 h long &middot; 5 min short',cs:'r',
+    impact:'2% of the 30-day budget gone in 1 h &mdash; exhausts in &asymp;50 h if sustained. Requires immediate human response.',
+    example:'Example &rarr; 1.44% errors on 99.9% SLO: &nbsp; 1.44 &divide; 0.1 = 14.4&times;'},
+   {mult:'6&times;',name:'Page: Mid burn',windows:'6 h long &middot; 30 min short',cs:'a',
+    impact:'5% of the 30-day budget gone in 6 h &mdash; exhausts in 5 days if sustained. Requires human response.',
+    example:'Example &rarr; 0.6% errors on 99.9% SLO: &nbsp; 0.6 &divide; 0.1 = 6&times;'},
+   {mult:'1&times;',name:'Ticket: Slow burn',windows:'3 days long &middot; 6 h short',cs:'g',
+    impact:'10% of the 30-day budget gone in 3 days &mdash; a slow, sustained drain. Actionable next business day.',
     example:'Example &rarr; 0.1% errors on 99.9% SLO: &nbsp; 0.1 &divide; 0.1 = 1&times;'}
  ],
- table:[
-   {rate:'14&times;',example:'1.4% errors',exhausted:'~52 h',hl:true},
-   {rate:'6&times;', example:'0.6% errors',exhausted:'~5 days'},
-   {rate:'3&times;', example:'0.3% errors',exhausted:'~10 days'},
-   {rate:'2&times;', example:'0.2% errors',exhausted:'~15 days'},
-   {rate:'1&times;', example:'0.1% errors',exhausted:'30 days (miss)',hl:true}
- ],
- twoWindow:'Short window (1h or 6h) detects the event quickly. Long window (6h or 3d) confirms it is sustained, not a 90-second spike. <b>Both windows must exceed the threshold simultaneously</b> before any alert fires &mdash; this AND logic eliminates the majority of spurious pages.',
- callout:'Why not alert on raw error counts? 500 errors/hour at 500k req/h = 0.1% (fine). At 5k req/h = 10% (catastrophic). Burn rate is load-invariant: the same threshold works at any traffic volume, any time of day.'},
+ twoWindow:'The <b>long window is what detects</b> the burn &mdash; short enough to page fast, long enough to be statistically real. The <b>short window is a reset gate</b>, always 1/12 of the long window: both must still be above threshold for the alert to keep firing, so it clears within minutes of the error rate recovering instead of lingering for the rest of the long window. Example: a 1 h/5 min pair drops within 5 minutes of errors stopping &mdash; without the short window, the 1 h average would keep the page open for up to an hour after the fix landed.',
+ callout:'Why not alert on raw error counts? 500 errors/hour at 500k req/h = 0.1% (fine). At 5k req/h = 10% (catastrophic). Burn rate is load-invariant: the same threshold works at any traffic volume, any time of day.',
+ note:'Source: Google SRE Workbook, Ch. 5 &mdash; Alerting on SLOs, Table 5-8 (multi-window, multi-burn-rate alerting). <a href="https://sre.google/workbook/alerting-on-slos/" target="_blank" rel="noreferrer">sre.google/workbook/alerting-on-slos</a>'},
 
+
+{section:'FMA & PRR',type:'twopane',
+ title:'Two reviews that happen before the incident, not after',
+ notes:"If your org doesn't have a PRR process, say so plainly and treat this as the proposal, not a description of the status quo.",
+ subtitle:'Failure Mode Analysis finds the risks in the design. A Production Readiness Review decides whether SRE will carry the pager for it.',
+ left:{title:'Failure Mode Analysis (FMA)',bullets:[
+   'Decompose the critical flow into its individual steps and dependencies',
+   'For each step, enumerate ways it can fail — not just "it fails," but how',
+   'Rate each failure by detectability and business impact',
+   'Assign a mitigation to every failure that is both likely and severe: redundancy, a timeout, a fallback, a circuit breaker',
+   'Run FMA before launch and again after any major architecture change — dependencies drift'
+ ]},
+ right:{title:'Production Readiness Review (PRR)',bullets:[
+   'A prerequisite gate: SRE does not take the pager for a service that has not passed one',
+   'Reviews system design and dependencies, monitoring and instrumentation, capacity, config-change management, and incident response readiness',
+   'Examines recent incidents and postmortems to size the real operational demand',
+   'A service that fails its PRR stays with the development team until the gaps it names are closed',
+   'This is the concrete answer to "how does SRE actually engage" — not a vibe, a checklist with a pass/fail outcome'
+ ]},
+ note:'Sources: Azure Well-Architected Framework, RE:03 — Failure Mode Analysis (<a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/failure-mode-analysis" target="_blank" rel="noreferrer">learn.microsoft.com/.../failure-mode-analysis</a>); Google SRE Book — Evolving SRE Engagement Model, Production Readiness Reviews (<a href="https://sre.google/sre-book/evolving-sre-engagement-model/" target="_blank" rel="noreferrer">sre.google/sre-book/evolving-sre-engagement-model</a>).'},
+
+{section:'Progressive Delivery',type:'twopane',
+ title:'Progressive delivery is the mechanism the error budget policy gates',
+ notes:"Connect this explicitly back to Governance — this is the ship differently lever that a pure ship, slow, stop framing is missing.",
+ subtitle:'"Slow down releases" is not a real lever unless there is a mechanism for shipping more safely, not just less often.',
+ left:{title:'The release-safety ladder',bullets:[
+   '<b>Canary:</b> shift a small percentage of traffic to the new version, hold it, then complete the rollout — e.g. 10% of traffic held for 10 minutes, then 100%',
+   '<b>Linear:</b> shift traffic in equal increments on a fixed interval, re-checking health at each step',
+   '<b>Blue/green:</b> stand up the new version fully alongside the old one; switch traffic over, keep the old environment idle for instant rollback',
+   '<b>Automated rollback:</b> wire the rollout to the same alarms your SLO already watches — a breached error-rate alarm mid-rollout reverts traffic automatically, no human required',
+   '<b>Feature flags:</b> decouple deploy from release — ship the code dark, flip it on for a cohort, kill it instantly without a redeploy',
+   '<b>Expand/contract:</b> for schema changes, add the new field, migrate readers, then remove the old field in a later release — never a single breaking migration'
+ ]},
+ right:{title:'How this plugs into the budget policy',bullets:[
+   'Budget healthy → ship with automated canary + rollback; no manual gate needed',
+   'Budget degraded → require an SRE-reviewed canary with a longer bake time before full rollout',
+   'Budget exhausted → feature flags let you keep shipping *code* while keeping risky paths *dark* — velocity does not have to fully stop',
+   'DORA\'s five delivery metrics measure this ladder\'s health directly: change lead time, deployment frequency, change fail rate, deployment rework rate, and failed-deployment recovery time',
+   'A rollback that requires a human to notice and act is a runbook waiting to be automated — see the Toil slide'
+ ]},
+ note:'Sources: AWS SAM Developer Guide — Deploying serverless applications gradually (canary/linear traffic shifting, alarm-triggered rollback), <a href="https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html" target="_blank" rel="noreferrer">docs.aws.amazon.com/.../automating-updates-to-serverless-apps</a>; DORA — <a href="https://dora.dev/guides/dora-metrics-four-keys/" target="_blank" rel="noreferrer">dora.dev/guides/dora-metrics-four-keys</a>.'},
 
 {section:'Postmortem Culture',type:'twopane',
  title:'Blameless postmortems close the learning loop',
+ notes:"Share a real, redacted postmortem from your org if you have one — this slide lands better with a concrete example than the bullet list alone.",
  subtitle:'Every SLO breach is an opportunity to update the system. Postmortems that assign blame fix nothing — they only hide future problems.',
  left:{title:'A good postmortem contains',bullets:['Precise impact statement: who, what, for how long','Detailed timeline from first signal to resolution','Root cause analysis (5-whys or fishbone)','Contributing factors beyond the immediate cause','Action items with owners and due dates']},
  right:{title:'Common anti-patterns',bullets:['Naming individuals rather than system failures','"Human error" as a root cause (it never is)','Action items with no owners or due dates','Writing the doc and never reviewing actions','Treating near-misses as non-events']},
@@ -529,6 +713,7 @@ var SLIDES=[
 
 {section:'Toil',type:'toil',
  title:'Toil is the SRE enemy — name it, measure it, eliminate it',
+ notes:"Ask for a show of hands on who spent more than half of last week on toil — this usually gets an uncomfortable, useful reaction.",
  subtitle:'From the SRE book: toil is work tied to running a production service that is manual, repetitive, automatable, tactical, and scales with service growth.',
  props:[
    {label:'Manual',desc:'Requires a human to execute rather than code to run automatically.'},
@@ -540,8 +725,46 @@ var SLIDES=[
  ],
  callout:'The 50% rule: SREs should spend at most 50% of their time on toil. Consistently exceeding this is a signal to escalate and reallocate or automate.'},
 
+{section:'Cascading Failures',type:'twopane',
+ title:'Most SEV1s are not the original failure — they are the retry storm on top of it',
+ notes:"The 64x number surprises people every time — let it sit for a second before moving to the mitigation bullets.",
+ subtitle:'A cascading failure grows through positive feedback: a partial failure raises load on the survivors, which then fail too.',
+ left:{title:'How retries turn a blip into an outage',bullets:[
+   'Retries compound across layers: 3 retries at each of 3 stack layers (backend, frontend, client) is not 9 attempts — it\'s 3&sup3; = <b>27&times;</b>, and with the client itself included, 3&#8308; = <b>64 total attempts</b> for one user action',
+   'A database already at capacity, hit with 64&times; the load from retries alone, cannot recover — the retries become the outage',
+   'Always use <b>randomized exponential backoff</b> — synchronized retries without jitter create waves that self-amplify across every client',
+   'Set a <b>retry budget</b> (e.g. 60 retries/minute/process) and a hard cap on retries per request — never retry indefinitely'
+ ]},
+ right:{title:'Shedding load on purpose beats failing by accident',bullets:[
+   '<b>Load shedding:</b> deliberately drop a proportion of incoming traffic as the server approaches overload, so it keeps serving the requests it can handle',
+   '<b>Graceful degradation:</b> serve a cheaper, lower-quality result instead of failing outright — cached-only results instead of a live database query',
+   'Define the trigger metrics up front (CPU, latency, queue depth) and the exact degraded-mode action — deciding this during the incident is too late',
+   'Implement shedding at the layer closest to the bottleneck — a global gate adds a new failure mode of its own',
+   'This is the mechanism, not the theory, behind "budget exhausted → reduce change rate" on the Governance slide — it is also what you build *before* you need it'
+ ]},
+ note:'Source: Google SRE Book, Chapter 22 — Addressing Cascading Failures. <a href="https://sre.google/sre-book/addressing-cascading-failures/" target="_blank" rel="noreferrer">sre.google/sre-book/addressing-cascading-failures</a>'},
+
+{section:'Multi-Tenant Resilience',type:'twopane',
+ title:'Blast radius is an architecture decision, not an incident outcome',
+ notes:"If your architecture is single-tenant or already cell-based, say so — this slide is most useful for teams who haven't yet decided their blast-radius strategy.",
+ subtitle:'A shared-everything SaaS backend means one bad tenant, one bad shard, or one bad deploy can take down all tenants at once. It doesn\'t have to.',
+ left:{title:'Static stability',bullets:[
+   'AWS\'s definition: "the overall system keeps working even when a dependency becomes impaired"',
+   'Control plane (create/modify/scale resources) is inherently more complex than data plane (serve the request) — and statistically more likely to fail',
+   'Pre-provision capacity across zones/regions so failover does not depend on the control plane scaling anything up mid-incident',
+   'A design that needs Auto Scaling or a config push to survive a failure is not statically stable — it has a dependency it hasn\'t priced in'
+ ]},
+ right:{title:'Cells and shuffle sharding',bullets:[
+   '<b>Cell-based architecture:</b> partition tenants into independent cells; a bad deploy or bug in one cell cannot reach another — blast radius = 1/N of tenants, not 100%',
+   '<b>Shuffle sharding:</b> assign each tenant a random combination of nodes instead of a fixed shard — with 8 nodes and 2 per tenant, traditional sharding gives 4 shards (1/4 of tenants share any failure); shuffle sharding gives <b>56</b> combinations (~1/56 blast radius); at 4 nodes per tenant, ~<b>1/1680</b>',
+   'Two tenants sharing a shuffle shard fully overlap only when every one of their assigned nodes matches — vanishingly unlikely as shard size grows',
+   'Pair with client-side retry logic: a request that hits a bad node in the shard retries onto a different one in the same tenant\'s shard'
+ ]},
+ note:'Sources: AWS Builders’ Library — Static Stability Using Availability Zones (<a href="https://aws.amazon.com/builders-library/static-stability-using-availability-zones/" target="_blank" rel="noreferrer">aws.amazon.com/builders-library/static-stability</a>); AWS Architecture Blog — Shuffle Sharding: Massive and Magical Fault Isolation (<a href="https://aws.amazon.com/blogs/architecture/shuffle-sharding-massive-and-magical-fault-isolation/" target="_blank" rel="noreferrer">aws.amazon.com/blogs/architecture/shuffle-sharding</a>).'},
+
 {section:'EKS SaaS',type:'twopane',
  title:'Applying SRE to AWS EKS-hosted SaaS',
+ notes:"Swap in your own platform's equivalent list if you're not on EKS — the customer-vs-platform SLI split is the transferable idea, not the specific AWS services.",
  subtitle:'Separate customer-facing SLOs from platform health signals. Platform metrics are supporting context, not user promises.',
  left:{title:'Customer SLIs (own these)',bullets:['API request success rate per tenant','Tenant workflow completion rate','Authentication success rate','p99 API latency per CUJ','Async job completion within SLA window','Data freshness for read-heavy surfaces']},
  right:{title:'Platform SLIs (support customer SLIs)',bullets:['Ingress / ALB routing success','Pod readiness across critical Deployments','Node availability per AZ','CoreDNS resolution latency','HPA responsiveness under burst load','EBS / EFS volume mount success rate']},
@@ -549,6 +772,7 @@ var SLIDES=[
 
 {section:'Observability',type:'columns',
  title:'Your observability stack must serve SLOs',
+ notes:"Ask whether the team could answer the four questions in the callout right now, live, during an incident — that's the real test of the stack.",
  subtitle:'Metrics, logs, and traces are inputs to reliability decisions — not the objective itself.',
  cols:[
    {title:'Metrics',items:['Prometheus + recording rules for SLI ratios','Grafana SLO dashboards','CloudWatch Container Insights','Custom burn-rate alert rules']},
@@ -559,13 +783,15 @@ var SLIDES=[
 
 {section:'Anti-patterns',type:'twopane',
  title:'What a Principal Engineer would push back on',
+ notes:"Good slide to pause on and ask the room to self-identify which anti-pattern they're closest to committing.",
  subtitle:'The most common failure mode is metrics without governance. Dashboards without decisions are decoration.',
- left:{title:'❌  Avoid',bullets:['Too many SLOs — alert fatigue and ignored dashboards','Ambiguous measurement boundaries (where does the SLI start?)','Infrastructure-only objectives that miss user impact','100% SLO targets that eliminate the error budget mechanism','Postmortems that blame individuals rather than systems','SREs spending > 50% of time on toil']},
- right:{title:'✅  Prefer',bullets:['A small set of CUJ-driven SLOs that decision-makers trust','Clear event counting with a documented good/bad definition','A written error-budget policy signed off by product and engineering','Burn-rate alerts wired to on-call runbooks','Regular monthly SLO review meetings','Toil tracked as a metric alongside SLI data']},
+ left:{title:svgIcon('cross','var(--red)')+' Avoid',bullets:['Too many SLOs — alert fatigue and ignored dashboards','Ambiguous measurement boundaries (where does the SLI start?)','Infrastructure-only objectives that miss user impact','100% SLO targets that eliminate the error budget mechanism','Postmortems that blame individuals rather than systems','SREs spending &gt; 50% of time on toil']},
+ right:{title:svgIcon('check','var(--green)')+' Prefer',bullets:['A small set of CUJ-driven SLOs that decision-makers trust','Clear event counting with a documented good/bad definition','A written error-budget policy signed off by product and engineering','Burn-rate alerts wired to on-call runbooks','Regular monthly SLO review meetings','Toil tracked as a metric alongside SLI data']},
  callout:'If a metric cannot drive a concrete engineering or product decision, it is probably not an SLO — it is a dashboard.'},
 
 {section:'Incident Mgmt',type:'table',
  title:'Incident severity levels and response model',
+ notes:"Confirm your own org's severity definitions match this table before presenting it as-is — severity definitions vary a lot between companies.",
  subtitle:'Shared severity definitions remove ambiguity during an incident and drive consistent escalation, communication, and post-incident action.',
  thead:['Severity','Definition','Response SLA','Communication cadence'],
  rows:[
@@ -578,6 +804,7 @@ var SLIDES=[
 
 {section:'On-Call Health',type:'twopane',
  title:'Sustainable on-call is an SRE output metric',
+ notes:"If you track any of these five metrics today, show the real numbers instead of the bullet list — this lands much harder with real data.",
  subtitle:'Alert fatigue and burnout are the #1 predictor of SRE attrition. Measure on-call health as rigorously as SLOs.',
  left:{title:'Healthy on-call signals',bullets:['≤ 2 actionable pages per shift on average','P50 time-to-resolve trending flat or down','Escalation rate < 10% of pages','Post-incident actions closed within agreed SLA','Rotation covers ≥ 4 engineers (no single-person coverage)']},
  right:{title:'Unhealthy on-call signals',bullets:['Noisy alerts that resolve without action (>20% of pages)','Same alert firing repeatedly without a fix or silence','Single engineer absorbing > 30% of incidents','Postmortem actions aging > 60 days with no progress','Engineers opting out of rotation due to burnout']},
@@ -585,6 +812,7 @@ var SLIDES=[
 
 {section:'SLO Review',type:'twopane',
  title:'The monthly SLO review: what you actually do',
+ notes:"Suggest scheduling the first review meeting before the end of this session — a slide about a meeting that never gets booked accomplishes nothing.",
  subtitle:'An SLO review is a decision meeting, not a dashboard walkthrough. Every agenda item should end with an action or a deliberate non-action.',
  left:{title:'Agenda (60 min)',bullets:['Review remaining error budget per SLO (10 min)','Walk SLO breach or near-miss events (15 min)','Review open postmortem actions — are they on track? (10 min)','Assess toil metric — is it trending down? (10 min)','Budget policy decision: ship / slow / stop (5 min)','SLO target review: tighten, loosen, or retire? (10 min)']},
  right:{title:'When to change an SLO target',bullets:['Tighten: customers are reporting pain inside the current target','Tighten: the team has consistently held 2× the target for 6+ months','Loosen: the target is never breached and the budget is never used','Loosen: the team is over-investing in reliability for this surface','Retire: the CUJ no longer exists or has been replaced','Add new: a new CUJ has launched and has no coverage']},
@@ -592,6 +820,7 @@ var SLIDES=[
 
 {section:'Runbooks',type:'twopane',
  title:'What a good runbook looks like',
+ notes:"Ask if anyone has tried following one of the team's own runbooks cold — most haven't, and that's the quarterly test this slide recommends.",
  subtitle:'A runbook is a playbook for a specific alert or failure mode. It must be actionable by a half-awake engineer at 3 AM.',
  left:{title:'Required sections',bullets:['Alert name and what it measures','Why it fires: threshold and burn-rate context','Likely causes (ordered by historical frequency)','Step-by-step triage: commands and expected output','Escalation: who to call and when','Rollback procedure if a deploy is involved','Link to the relevant SLO dashboard']},
  right:{title:'Runbook anti-patterns',bullets:['"Investigate the issue" as a step (not actionable)','Runbook last updated over 6 months ago','No expected output for diagnostic commands','Escalation contact is a team alias, not a named on-call','No rollback or mitigation path — only investigation','Requires access the on-call engineer may not have at 3 AM']},
@@ -599,12 +828,24 @@ var SLIDES=[
 
 {section:'References',type:'links',
  title:'The canonical sources behind this model',
+ notes:"Close by pointing at this slide directly — tell the room this deck is a synthesis, not a replacement, and the primary sources are one click away.",
  subtitle:'These are the primary texts. Read them in order — each builds on the last.',
  links:[
    {label:'Google SRE Book — How Google Runs Production Systems',url:'https://sre.google/sre-book/table-of-contents/'},
    {label:'Google SRE Workbook — Implementing SLOs',url:'https://sre.google/workbook/implementing-slos/'},
    {label:'Google SRE Workbook — Alerting on SLOs',url:'https://sre.google/workbook/alerting-on-slos/'},
    {label:'Google SRE Workbook — On-Call & Incident Management',url:'https://sre.google/workbook/on-call/'},
+   {label:'Google SRE Book — Addressing Cascading Failures',url:'https://sre.google/sre-book/addressing-cascading-failures/'},
+   {label:'Google SRE Book — Eliminating Toil',url:'https://sre.google/sre-book/eliminating-toil/'},
+   {label:'Google SRE Book — Evolving SRE Engagement Model (Production Readiness Reviews)',url:'https://sre.google/sre-book/evolving-sre-engagement-model/'},
+   {label:'AWS Well-Architected Framework — Reliability Pillar',url:'https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html'},
+   {label:'AWS Builders’ Library — Static Stability Using Availability Zones',url:'https://aws.amazon.com/builders-library/static-stability-using-availability-zones/'},
+   {label:'AWS Architecture Blog — Shuffle Sharding: Massive and Magical Fault Isolation',url:'https://aws.amazon.com/blogs/architecture/shuffle-sharding-massive-and-magical-fault-isolation/'},
+   {label:'AWS SAM Developer Guide — Deploying Serverless Applications Gradually',url:'https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html'},
+   {label:'Azure Well-Architected Framework — Reliability Checklist (RE:01–RE:10)',url:'https://learn.microsoft.com/en-us/azure/well-architected/reliability/checklist'},
+   {label:'Azure Well-Architected Framework — Reliability Targets & Composite SLOs',url:'https://learn.microsoft.com/en-us/azure/well-architected/reliability/metrics'},
+   {label:'Azure Well-Architected Framework — Failure Mode Analysis',url:'https://learn.microsoft.com/en-us/azure/well-architected/reliability/failure-mode-analysis'},
+   {label:'DORA — The Five Key Metrics of Software Delivery Performance',url:'https://dora.dev/guides/dora-metrics-four-keys/'},
    {label:'Datadog SLO documentation',url:'https://docs.datadoghq.com/service_level_objectives/'},
    {label:'Grafana SLO documentation',url:'https://grafana.com/docs/grafana-cloud/alerting-and-irm/slo/'}
  ],
@@ -629,7 +870,7 @@ function render(s){
         '<div class="tags">'+s.tags.map(function(t,i){return ch(t,i>=2&&i<4?'r':'');}).join('')+'</div>'+
         '<div class="sdiv"></div>'+
         '<div style="flex:1;min-height:0;overflow:hidden;border-radius:8px;margin-top:4px">'+
-          '<img src="images/Site-Reliability-Engineering-Guide.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;border-radius:8px">'+
+          '<img src="images/Site-Reliability-Engineering-Guide.jpg" alt="Site Reliability Engineering guide cover" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;border-radius:8px">'+
         '</div>'+
       '</div>'+
       '<div style="display:flex;flex-direction:column;gap:13px">'+
@@ -656,7 +897,7 @@ function render(s){
     return'<div style="display:flex;flex-direction:column;gap:20px">'+hd(s)+
       '<div class="g4">'+s.signals.map(function(g){
         return'<div class="card">'+
-          '<div class="sigicon" style="background:'+g.bg+'">'+g.icon+'</div>'+
+          '<div class="sigicon" style="background:'+g.bg+';color:'+g.color+'">'+svgIcon(g.icon,g.color,20)+'</div>'+
           '<div class="sname" style="color:'+g.color+'">'+g.name+'</div>'+
           '<div class="sdesc">'+g.desc+'</div>'+
           '<span class="chip" style="border-color:'+g.color+';color:'+g.color+';background:'+g.bg+'">'+g.metric+'</span>'+
@@ -679,6 +920,7 @@ function render(s){
       '<div class="g3">'+s.items.map(function(m){
         return cd(m.top,'<div class="bignum">'+m.big+'</div><div style="font-size:.84rem;color:var(--muted)">'+m.desc+'</div>');
       }).join('')+'</div>'+
+      (s.chart==='burndown'?cd('Error budget burn-down — 99.9% SLO, 30-day window','<div style="max-width:560px;margin:0 auto">'+chartBurndown()+'</div><div style="font-size:.78rem;color:var(--muted);margin-top:6px">Illustrative: a service burning at 2&times; its sustainable rate exhausts the entire 30-day budget by day 15 &mdash; this is exactly what a 2&times; burn-rate alert (see Alerting) is built to catch early.</div>'):'')+
       (s.footer?no(s.footer):'')+
     '</div>';
   }
@@ -709,11 +951,6 @@ function render(s){
         '<div class="br-example">'+t.example+'</div>'+
       '</div>';
     }).join('');
-    var brRows=s.table.map(function(r){
-      return'<tr'+(r.hl?' class="nhl"':'')+'>'+
-        '<td>'+r.rate+'</td><td>'+r.example+'</td><td>'+r.exhausted+'</td>'+
-      '</tr>';
-    }).join('');
     return'<div style="display:flex;flex-direction:column;gap:16px">'+hd(s)+
       '<div class="fmla-hero">'+
         '<div class="fmla-eq">'+s.formula+'</div>'+
@@ -722,26 +959,24 @@ function render(s){
       '<div class="g2">'+
         cd('Alert tiers',tiersHtml)+
         cd('Time to exhaustion &mdash; 30-day window, 99.9% SLO',
-          '<div class="twrap"><table class="nines-tbl">'+
-            '<thead><tr><th>Burn rate</th><th>Example error rate</th><th>Budget gone in</th></tr></thead>'+
-            '<tbody>'+brRows+'</tbody>'+
-          '</table></div>'+
+          chartExhaustionBars()+
           '<div style="margin-top:13px;padding:11px 13px;background:rgba(29,78,216,0.05);border-radius:8px;border:1px solid var(--blue-border)">'+
             '<div style="font-weight:800;font-size:.85rem;margin-bottom:4px">Two-window AND rule</div>'+
             '<div style="font-size:.82rem;color:var(--muted);line-height:1.55">'+s.twoWindow+'</div>'+
           '</div>')+
       '</div>'+
       co(s.callout)+
+      (s.note?no(s.note):'')+
     '</div>';
   }
   if(s.type==='slomath'){
     var steps=s.steps.map(function(st){
       return'<tr><td class="slbl">'+st.label+'</td><td class="seq">'+st.eq+'</td></tr>';
     }).join('');
+    var nineshead=s.nineshead||['SLO','Downtime / month','Allowed failures / 30 M req'];
     var nrows=s.nines.map(function(n){
-      return'<tr'+(n.hl?' class="nhl"':'')+'>'+
-        '<td>'+n.slo+'</td><td>'+n.downtime+'</td><td>'+n.bad+'</td>'+
-      '</tr>';
+      var cells=Object.keys(n).filter(function(k){return k!=='hl';}).map(function(k){return'<td>'+n[k]+'</td>';}).join('');
+      return'<tr'+(n.hl?' class="nhl"':'')+'>'+cells+'</tr>';
     }).join('');
     return'<div style="display:flex;flex-direction:column;gap:16px">'+hd(s)+
       '<div class="fmla-hero">'+
@@ -749,13 +984,14 @@ function render(s){
         '<div class="fmla-sub">'+s.formulaNote+'</div>'+
       '</div>'+
       '<div class="g2">'+
-        cd('Worked example &mdash; 99.9% SLO, 30-day window','<table class="step-tbl">'+steps+'</table>')+
-        cd('What each additional nine actually costs',
+        cd(s.stepsTitle||'Worked example &mdash; 99.9% SLO, 30-day window','<table class="step-tbl">'+steps+'</table>')+
+        cd(s.tableTitle||'What each additional nine actually costs',
           '<div class="twrap"><table class="nines-tbl">'+
-            '<thead><tr><th>SLO</th><th>Downtime / month</th><th>Allowed failures / 30 M req</th></tr></thead>'+
+            '<thead><tr>'+nineshead.map(function(h){return'<th>'+h+'</th>';}).join('')+'</tr></thead>'+
             '<tbody>'+nrows+'</tbody>'+
           '</table></div>')+
       '</div>'+
+      (s.chart==='costcurve'?cd('The cost of a nine &mdash; illustrative, not measured','<div style="max-width:520px;margin:0 auto">'+chartCostCurve()+'</div><div style="font-size:.78rem;color:var(--muted);margin-top:6px">Google SRE Book, Embracing Risk: "cost does not increase linearly as reliability increments &mdash; an incremental improvement in reliability may cost 100&times; more than the previous increment." Bar heights above are illustrative, not measured data — the shape, not the exact multiple, is the point.</div>'):'')+
       (s.callout?co(s.callout):'')+
       (s.note?no(s.note):'')+
     '</div>';
@@ -801,8 +1037,32 @@ function render(s){
 var idx=0;
 function go(n){
   idx=Math.max(0,Math.min(n,SLIDES.length-1));
+  if(history.replaceState)history.replaceState(null,'','#'+(idx+1));
   draw();
 }
+window.addEventListener('hashchange',function(){
+  var h=parseInt(location.hash.slice(1),10);
+  if(h>=1&&h<=SLIDES.length&&h-1!==idx)go(h-1);
+});
+// auto-fit dense slide content to the panel height instead of letting it scroll
+function fitSlide(){
+  if(window.innerWidth<=1080)return; // mobile layout scrolls naturally, skip scaling
+  var panel=document.getElementById('panel');
+  var content=document.getElementById('pcontent');
+  if(!panel||!content)return;
+  content.style.width='';
+  content.style.transform='';
+  var cs=getComputedStyle(panel);
+  var avail=panel.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+  var needed=content.scrollHeight;
+  if(needed>avail&&needed>0){
+    var scale=Math.max(0.55,avail/needed);
+    content.style.transformOrigin='top left';
+    content.style.width=(100/scale)+'%';
+    content.style.transform='scale('+scale+')';
+  }
+}
+window.addEventListener('resize',fitSlide);
 function draw(){
   var s=SLIDES[idx],total=SLIDES.length;
   // nav list
@@ -814,7 +1074,10 @@ function draw(){
     '</div>';
   }).join('');
   nl.querySelectorAll('.ni').forEach(function(el){
-    el.addEventListener('click',function(){go(+el.dataset.i);});
+    el.addEventListener('click',function(){
+      go(+el.dataset.i);
+      document.getElementById('app').classList.remove('mobilenav-open');
+    });
   });
   var active=nl.querySelector('.ni.on');
   if(active)active.scrollIntoView({block:'nearest'});
@@ -826,13 +1089,16 @@ function draw(){
   var panel=document.getElementById('panel');
   panel.classList.add('fade-out');
   setTimeout(function(){
-    panel.innerHTML=render(s);
+    panel.innerHTML='<div id="pcontent">'+render(s)+'</div>';
     panel.classList.remove('fade-out');
+    fitSlide();
   },100);
   document.getElementById('bprev').disabled=idx===0;
   document.getElementById('bnext').disabled=idx===total-1;
   // scroll to top
   document.getElementById('frame').scrollTop=0;
+  // speaker notes
+  document.getElementById('notesContent').textContent=s.notes||'(No notes for this slide.)';
 }
 document.getElementById('bprev').onclick=function(){if(idx>0)go(idx-1);};
 document.getElementById('bnext').onclick=function(){if(idx<SLIDES.length-1)go(idx+1);};
@@ -840,10 +1106,16 @@ document.addEventListener('keydown',function(e){
   if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();if(idx<SLIDES.length-1)go(idx+1);}
   if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();if(idx>0)go(idx-1);}
   if(e.key==='f'||e.key==='F'){toggleFullscreen();}
+  if(e.key==='n'||e.key==='N'){
+    var nd=document.getElementById('notesDrawer');
+    nd.hidden=!nd.hidden;
+  }
 });
-// sidebar toggle
+// sidebar toggle — desktop collapses the rail, mobile opens a full-screen drawer
 document.getElementById('sidebartoggle').onclick=function(){
-  document.getElementById('app').classList.toggle('collapsed');
+  var app=document.getElementById('app');
+  if(window.innerWidth<=1080)app.classList.toggle('mobilenav-open');
+  else app.classList.toggle('collapsed');
 };
 // fullscreen
 function toggleFullscreen(){
@@ -851,8 +1123,18 @@ function toggleFullscreen(){
   else{document.exitFullscreen();}
 }
 document.getElementById('fsbtn').onclick=toggleFullscreen;
+// print the whole deck, not just the current slide
+window.addEventListener('beforeprint',function(){
+  document.getElementById('printAll').innerHTML=SLIDES.map(function(s){
+    return'<div class="panel-print">'+render(s)+'</div>';
+  }).join('');
+});
+window.addEventListener('afterprint',function(){
+  document.getElementById('printAll').innerHTML='';
+});
 // dark mode toggle
-var dark=localStorage.getItem('dark')==='1';
+var darkStored=localStorage.getItem('dark');
+var dark=darkStored!==null?darkStored==='1':matchMedia('(prefers-color-scheme: dark)').matches;
 function applyDark(){
   document.body.classList.toggle('dark',dark);
   document.getElementById('dmlabel').textContent=dark?'DARK':'LIGHT';
